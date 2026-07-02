@@ -1,5 +1,4 @@
 import React from "react";
-import Link from "next/link";
 
 type NavItem = {
   title: string;
@@ -95,13 +94,13 @@ export default function Page() {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link href="/dashboard" className="rounded-2xl bg-[#1FA187] px-6 py-4 font-bold text-[#020B14]">
+              <button className="rounded-2xl bg-[#1FA187] px-6 py-4 font-bold text-[#020B14]">
                 Ver Mi MoneyMap
-              </Link>
+              </button>
 
-              <Link href="/chat" className="rounded-2xl border border-white/20 px-6 py-4 font-bold">
+              <button className="rounded-2xl border border-white/20 px-6 py-4 font-bold">
                 Abrir Chat
-              </Link>
+              </button>
             </div>
           </div>
 
