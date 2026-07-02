@@ -4,13 +4,6 @@ export default function DashboardPage() {
 
     <main className="p-8">
 
-      <h1 className="text-4xl font-black mb-6">
-
-        Mi MoneyMap
-
-      </h1>
-
- 
 
       <iframe
 

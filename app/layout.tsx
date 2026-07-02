@@ -1,92 +1,83 @@
-
 import "./globals.css";
+import Navigation from "../components/Navigation";
+import Image from "next/image";
 import Link from "next/link";
-import Sidebar from "@/components/sidebar";
- 
 
 export default function RootLayout({
 
   children,
 
 }: {
-
   children: React.ReactNode;
-
 }) {
 
   return (
 
     <html lang="es">
 
-      <body className="bg-[#020B14] text-white">
+      <body className="bg-slate-50">
 
-        <Sidebar />
+ 
 
-          <header className="border-b border-white/10">
+        <header className="bg-white border-b border-slate-200">
 
-            <div className="mx-auto flex max-w-7xl items-center justify-between p-6">
+ 
 
-  
+          <div className="mx-auto max-w-7xl px-6 py-3">
 
-              <Link href="/">
+ 
 
-                <h1 className="text-3xl font-black cursor-pointer">
+            <div className="flex items-center justify-between">
 
-                  Money
+ 
 
-                  <span className="text-[#1FA187]">
+              <Link
 
-                    Map
+                href="/"
 
-                  </span>
+                className="flex items-center gap-3"
 
-                </h1>
+              >
+
+                <Image
+
+                  src="/Multimedia/portada.png"
+
+                  alt="MoneyMap"
+
+                  width={300}
+
+                  height={300}
+
+                  priority
+
+                />
+
+
 
               </Link>
 
-  
+ 
 
-              <nav className="flex gap-6 text-sm">
-
-                <Link href="/dashboard">
-
-                  Dashboard
-
-                </Link>
-
-  
-
-                <Link href="/chat">
-
-                  Chat
-
-                </Link>
-
-  
-
-                <Link href="/informes">
-
-                  Informes
-
-                </Link>
-
-  
-
-                <Link href="/formacion">
-
-                  Formación
-
-                </Link>
-
-              </nav>
+              <Navigation />
 
             </div>
 
-          </header>
+ 
 
-  
+          </div>
+
+        </header>
+
+ 
+
+        <main className="mx-auto max-w-7xl p-6">
 
           {children}
+
+        </main>
+
+ 
 
       </body>
 
