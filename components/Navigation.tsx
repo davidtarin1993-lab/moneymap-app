@@ -18,10 +18,6 @@ import {
 
   MessageCircle,
 
-  FileText,
-
-  GraduationCap,
-
   User,
 
 } from "lucide-react";
@@ -42,7 +38,7 @@ const items = [
 
   {
 
-    label: "MoneyMap",
+    label: "Mapa",
 
     path: "/dashboard",
 
@@ -72,26 +68,6 @@ const items = [
 
   {
 
-    label: "Informes",
-
-    path: "/informes",
-
-    icon: FileText,
-
-  },
-
-  {
-
-    label: "Formación",
-
-    path: "/formacion",
-
-    icon: GraduationCap,
-
-  },
-
-  {
-
     label: "Perfil",
 
     path: "/perfil",
@@ -112,13 +88,43 @@ export default function Navigation() {
 
   return (
 
-    <nav className="flex flex-wrap justify-center gap-2">
+    <nav
+
+      className="
+
+        fixed
+
+        bottom-4
+
+        left-1/2
+
+        -translate-x-1/2
+
+        z-50
+
+        flex
+
+        gap-2
+
+        bg-[#0F172A]
+
+        border
+
+        border-white/10
+
+        rounded-3xl
+
+        p-2
+
+        shadow-2xl
+
+      "
+
+    >
 
       {items.map((item) => {
 
         const Icon = item.icon;
-
- 
 
         const active = pathname === item.path;
 
@@ -134,25 +140,29 @@ export default function Navigation() {
 
             className={`
 
-              flex flex-col items-center justify-center
+              flex
 
-              w-[90px]
+              flex-col
 
-              h-[75px]
+              items-center
+
+              justify-center
 
               rounded-2xl
 
-              transition-all
+              px-4
 
-              duration-200
+              py-3
+
+              transition-all
 
               ${
 
                 active
 
-                  ? "bg-[#0B3A6E] text-white shadow-lg"
+                  ? "bg-[#0B3A6E] text-white"
 
-                  : "bg-white text-slate-500 hover:bg-[#1FA187]/10 hover:text-[#0B3A6E]"
+                  : "text-slate-400"
 
               }
 
@@ -160,11 +170,11 @@ export default function Navigation() {
 
           >
 
-            <Icon size={24} strokeWidth={2.2} />
+            <Icon size={22} />
 
  
 
-            <span className="mt-2 text-[11px] font-semibold">
+            <span className="text-[10px] mt-1">
 
               {item.label}
 
@@ -181,3 +191,5 @@ export default function Navigation() {
   );
 
 }
+
+  

@@ -174,9 +174,9 @@ export default function HomePage() {
 
         alt="MoneyMap"
 
-        width={1000}
+        width={500}
 
-        height={1000}
+        height={500}
 
         priority
 
