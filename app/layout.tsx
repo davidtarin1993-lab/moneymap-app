@@ -2,6 +2,8 @@ import "./globals.css";
 import Navigation from "../components/Navigation";
 import Image from "next/image";
 import Link from "next/link";
+import AppShell from "../components/AppShell";
+
 
 export default function RootLayout({
 
@@ -15,15 +17,14 @@ export default function RootLayout({
 
     <html lang="es">
 
-      <body className="bg-slate-50">
-
- 
+      <body className="bg-white">
+         
 
         <header className="bg-white border-b border-slate-200">
 
  
 
-          <div className="mx-auto max-w-7xl px-6 py-3">
+          <div className="mx-auto max-w-7xl px-8 py-0">
 
  
 
@@ -39,19 +40,6 @@ export default function RootLayout({
 
               >
 
-                <Image
-
-                  src="/Multimedia/portada.png"
-
-                  alt="MoneyMap"
-
-                  width={300}
-
-                  height={300}
-
-                  priority
-
-                />
 
 
 
@@ -71,10 +59,10 @@ export default function RootLayout({
 
  
 
-        <main className="mx-auto max-w-7xl p-6">
-
-          {children}
-
+        <main className="main-h-screen pb-0 ">
+            <AppShell>
+              {children}
+            </AppShell>
         </main>
 
  

@@ -1,239 +1,335 @@
-import React from "react";
-
-type NavItem = {
-  title: string;
-  subtitle: string;
-  icon: string;
-  primary?: boolean;
-};
-
-export default function Page() {
-  const navItems: NavItem[] = [
-    {
-      title: "Mi MoneyMap",
-      subtitle: "Cuadro de mando",
-      icon: "📊",
-      primary: true,
-    },
-    {
-      title: "Informes",
-      subtitle: "PDFs y análisis",
-      icon: "📄",
-    },
-    {
-      title: "Mi Ruta",
-      subtitle: "Objetivos y foco",
-      icon: "🧭",
-    },
-    {
-      title: "Chat",
-      subtitle: "Asistente MoneyMap",
-      icon: "💬",
-      primary: true,
-    },
-    {
-      title: "Formación",
-      subtitle: "Guías y cursos",
-      icon: "📚",
-    },
-    {
-      title: "Novedades",
-      subtitle: "Avisos y noticias",
-      icon: "📰",
-    },
-    {
-      title: "Perfil",
-      subtitle: "Datos y acceso",
-      icon: "⚙️",
-    },
-  ];
-
-  const quickActions: string[] = [
-    "Analiza mis gastos",
-    "Resúmeme mi situación",
-    "Explícame este indicador",
-    "Muéstrame mis desvíos",
-  ];
+export default function PerfilPage() {
 
   return (
-    <main className="min-h-screen bg-[#020B14] text-white">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <header className="flex items-center justify-between">
+
+    <main className="max-w-md mx-auto px-5 py-4">
+
+ 
+
+      {/* PERFIL */}
+
+ 
+
+      <section className="bg-[#111827] rounded-3xl p-4 shadow-xl">
+
+ 
+
+        <div className="flex items-center gap-4">
+
+ 
+
+          <div
+
+            className="
+
+              w-14
+
+              h-14
+
+              rounded-full
+
+              bg-[#0B3A6E]
+
+              flex
+
+              items-center
+
+              justify-center
+
+              text-lg
+
+              font-bold
+
+            "
+
+          >
+
+            DT
+
+          </div>
+
+ 
+
           <div>
-            <h1 className="text-4xl font-black">
-              Money<span className="text-[#1FA187]">Map</span>
+
+            <h1 className="text-xl font-black text-white">
+
+              David Tarín
+
             </h1>
-            <p className="text-white/60">
-              Tu dinero, con dirección
+
+ 
+
+            <p className="text-[#1FA187] text-sm font-medium">
+
+              MoneyMap Premium
+
             </p>
+
           </div>
 
-          <button className="rounded-2xl bg-[#1FA187] px-5 py-3 font-bold text-[#020B14]">
-            Admin
-          </button>
-        </header>
+ 
 
-        <section className="mt-16 grid gap-10 lg:grid-cols-2">
+        </div>
+
+ 
+
+      </section>
+
+ 
+
+      {/* DATOS PERSONALES */}
+
+ 
+
+      <section className="bg-[#111827] rounded-3xl p-4 mt-4 shadow-xl">
+
+ 
+
+        <h2 className="text-sm font-bold text-[#1FA187] uppercase">
+
+          Datos personales
+
+        </h2>
+
+ 
+
+        <div className="mt-4 space-y-3">
+
+ 
+
           <div>
-            <div className="inline-flex rounded-lg bg-[#1FA187] px-4 py-2 text-sm font-bold text-[#020B14]">
-              Claridad. Orden. Dirección.
-            </div>
 
-            <h2 className="mt-6 text-5xl font-black uppercase md:text-7xl">
-              Beta 0.1
-              <span className="block text-[#1FA187]">
-                por ti.
-              </span>
-            </h2>
+            <p className="text-white/50 text-xs">
 
-            <p className="mt-6 text-lg text-white/70">
-              Bienvenido a tu zona privada MoneyMap.
-              Consulta tu cuadro de mando,
-              descarga informes, accede a formación
-              y conversa con tu asistente financiero.
+              Email
+
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-4">
-              <button className="rounded-2xl bg-[#1FA187] px-6 py-4 font-bold text-[#020B14]">
-                Ver Mi MoneyMap
-              </button>
+ 
 
-              <button className="rounded-2xl border border-white/20 px-6 py-4 font-bold">
-                Abrir Chat
-              </button>
-            </div>
-          </div>
+            <p className="text-white">
 
-          <div className="rounded-3xl border border-white/10 bg-[#061725] p-8">
-            <div className="mb-4 text-sm font-bold text-[#1FA187]">
-              MAPA ACTUAL DEL DINERO
-            </div>
+              david@email.com
 
-            <div className="flex h-[320px] items-center justify-center rounded-2xl border border-dashed border-[#1FA187]/40">
-              <div className="text-center">
-                <div className="text-6xl">🧭</div>
-                <p className="mt-4 font-bold">
-                  Tu ruta empieza aquí
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-16">
-          <h3 className="text-3xl font-black uppercase">
-            Accesos principales
-          </h3>
-
-          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-7">
-            {navItems.map((item) => (
-              <button
-                key={item.title}
-                className={`rounded-3xl border p-5 text-left transition ${
-                  item.primary
-                    ? "border-[#1FA187] bg-[#1FA187]/10"
-                    : "border-white/10 bg-white/5"
-                }`}
-              >
-                <div className="mb-4 text-3xl">
-                  {item.icon}
-                </div>
-
-                <h4 className="font-black">
-                  {item.title}
-                </h4>
-
-                <p className="mt-2 text-xs text-white/60">
-                  {item.subtitle}
-                </p>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-16 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <p className="font-bold text-[#1FA187]">
-              Chat MoneyMap
             </p>
 
-            <h3 className="mt-2 text-3xl font-black">
-              ¿Qué necesitas revisar hoy?
-            </h3>
-
-            <div className="mt-6 grid gap-2 sm:grid-cols-2">
-              {quickActions.map((action) => (
-                <button
-                  key={action}
-                  className="rounded-2xl border border-[#1FA187]/20 bg-[#1FA187]/10 p-3 text-left"
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <input
-                type="text"
-                placeholder="Escribe tu consulta..."
-                className="flex-1 rounded-2xl bg-[#061725] px-4 py-3 outline-none"
-              />
-
-              <button className="rounded-2xl bg-[#1FA187] px-4 py-3 font-bold text-[#020B14]">
-                Enviar
-              </button>
-            </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <h3 className="text-3xl font-black">
-              Bienvenido a MoneyMap
-            </h3>
+ 
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Card
-                title="Mi MoneyMap"
-                text="Cuadro de mando financiero."
-              />
+          <div>
 
-              <Card
-                title="Informes"
-                text="Informes personalizados."
-              />
+            <p className="text-white/50 text-xs">
 
-              <Card
-                title="Formación"
-                text="Academia MoneyMap."
-              />
+              Teléfono
 
-              <Card
-                title="Novedades"
-                text="Noticias y avisos."
-              />
-            </div>
+            </p>
+
+ 
+
+            <p className="text-white">
+
+              +34 600 000 000
+
+            </p>
+
           </div>
-        </section>
-      </div>
+
+ 
+
+        </div>
+
+ 
+
+      </section>
+
+ 
+
+      {/* ACTIVIDAD */}
+
+ 
+
+      <section className="bg-[#111827] rounded-3xl p-4 mt-4 shadow-xl">
+
+ 
+
+        <h2 className="text-sm font-bold text-[#1FA187] uppercase">
+
+          Actividad
+
+        </h2>
+
+ 
+
+        <div className="mt-4 space-y-3">
+
+ 
+
+          <div className="flex justify-between">
+
+            <span className="text-white/60">
+
+              Último informe
+
+            </span>
+
+ 
+
+            <span className="text-white">
+
+              Junio 2026
+
+            </span>
+
+          </div>
+
+ 
+
+          <div className="flex justify-between">
+
+            <span className="text-white/60">
+
+              Próximo informe
+
+            </span>
+
+ 
+
+            <span className="text-white">
+
+              01 Jul 2026
+
+            </span>
+
+          </div>
+
+ 
+
+          <div className="flex justify-between">
+
+            <span className="text-white/60">
+
+              Ruta activa
+
+            </span>
+
+ 
+
+            <span className="text-white">
+
+              Emergencia
+
+            </span>
+
+          </div>
+
+ 
+
+        </div>
+
+ 
+
+      </section>
+
+ 
+
+      {/* SUSCRIPCIÓN */}
+
+ 
+
+      <section className="bg-[#111827] rounded-3xl p-4 mt-4 shadow-xl">
+
+ 
+
+        <h2 className="text-sm font-bold text-[#1FA187] uppercase">
+
+          Suscripción
+
+        </h2>
+
+ 
+
+        <div className="mt-4 flex justify-between items-center">
+
+ 
+
+          <div>
+
+            <p className="text-white">
+
+              MoneyMap Premium
+
+            </p>
+
+ 
+
+            <p className="text-xs text-white/50 mt-1">
+
+              Próxima renovación
+
+            </p>
+
+          </div>
+
+ 
+
+          <span className="font-semibold text-white">
+
+            01 Ago 2026
+
+          </span>
+
+ 
+
+        </div>
+
+ 
+
+      </section>
+
+ 
+
+      {/* CERRAR SESIÓN */}
+
+ 
+
+      <button
+
+        className="
+
+          w-full
+
+          mt-4
+
+          bg-white
+
+          border
+
+          border-red-500/20
+
+          rounded-3xl
+
+          p-4
+
+          text-red-300
+
+          font-semibold
+
+        "
+
+      >
+
+        Cerrar sesión
+
+      </button>
+
+ 
+
     </main>
+
   );
+
 }
 
-function Card({
-  title,
-  text,
-}: {
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-[#061725] p-4">
-      <h4 className="font-bold text-[#1FA187]">
-        {title}
-      </h4>
-
-      <p className="mt-2 text-sm text-white/60">
-        {text}
-      </p>
-    </div>
-  );
-}
+ 

@@ -1,239 +1,214 @@
-import React from "react";
-
-type NavItem = {
-  title: string;
-  subtitle: string;
-  icon: string;
-  primary?: boolean;
-};
-
-export default function Page() {
-  const navItems: NavItem[] = [
-    {
-      title: "Mi MoneyMap",
-      subtitle: "Cuadro de mando",
-      icon: "📊",
-      primary: true,
-    },
-    {
-      title: "Informes",
-      subtitle: "PDFs y análisis",
-      icon: "📄",
-    },
-    {
-      title: "Mi Ruta",
-      subtitle: "Objetivos y foco",
-      icon: "🧭",
-    },
-    {
-      title: "Chat",
-      subtitle: "Asistente MoneyMap",
-      icon: "💬",
-      primary: true,
-    },
-    {
-      title: "Formación",
-      subtitle: "Guías y cursos",
-      icon: "📚",
-    },
-    {
-      title: "Novedades",
-      subtitle: "Avisos y noticias",
-      icon: "📰",
-    },
-    {
-      title: "Perfil",
-      subtitle: "Datos y acceso",
-      icon: "⚙️",
-    },
-  ];
-
-  const quickActions: string[] = [
-    "Analiza mis gastos",
-    "Resúmeme mi situación",
-    "Explícame este indicador",
-    "Muéstrame mis desvíos",
-  ];
+export default function RutaPage() {
 
   return (
-    <main className="min-h-screen bg-[#020B14] text-white">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-black">
-              Money<span className="text-[#1FA187]">Map</span>
-            </h1>
-            <p className="text-white/60">
-              Tu dinero, con dirección
-            </p>
-          </div>
 
-          <button className="rounded-2xl bg-[#1FA187] px-5 py-3 font-bold text-[#020B14]">
-            Admin
-          </button>
-        </header>
+    <main className="max-w-md mx-auto px-5 py-4">
 
-        <section className="mt-16 grid gap-10 lg:grid-cols-2">
-          <div>
-            <div className="inline-flex rounded-lg bg-[#1FA187] px-4 py-2 text-sm font-bold text-[#020B14]">
-              Claridad. Orden. Dirección.
-            </div>
+ 
 
-            <h2 className="mt-6 text-5xl font-black uppercase md:text-7xl">
-              Beta 0.1
-              <span className="block text-[#1FA187]">
-                por ti.
-              </span>
-            </h2>
+ 
 
-            <p className="mt-6 text-lg text-white/70">
-              Bienvenido a tu zona privada MoneyMap.
-              Consulta tu cuadro de mando,
-              descarga informes, accede a formación
-              y conversa con tu asistente financiero.
-            </p>
+      {/* OBJETIVO ACTUAL */}
 
-            <div className="mt-8 flex flex-wrap gap-4">
-              <button className="rounded-2xl bg-[#1FA187] px-6 py-4 font-bold text-[#020B14]">
-                Ver Mi MoneyMap
-              </button>
+ 
 
-              <button className="rounded-2xl border border-white/20 px-6 py-4 font-bold">
-                Abrir Chat
-              </button>
-            </div>
-          </div>
+      <section className="bg-[#0B3A6E] rounded-3xl p-6 mt-4 shadow-xl">
 
-          <div className="rounded-3xl border border-white/10 bg-[#061725] p-8">
-            <div className="mb-4 text-sm font-bold text-[#1FA187]">
-              MAPA ACTUAL DEL DINERO
-            </div>
+         <p className="text-[#1FA187] text-sm font-semibold uppercase">
 
-            <div className="flex h-[320px] items-center justify-center rounded-2xl border border-dashed border-[#1FA187]/40">
-              <div className="text-center">
-                <div className="text-6xl">🧭</div>
-                <p className="mt-4 font-bold">
-                  Tu ruta empieza aquí
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+          Mi Ruta
 
-        <section className="mt-16">
-          <h3 className="text-3xl font-black uppercase">
-            Accesos principales
+        </p>
+
+
+        <p className="text-white/70 text-sm">
+
+          Objetivo principal
+
+        </p>
+
+ 
+
+        <h2 className="text-2xl font-bold text-white mt-2">
+
+          Fondo de emergencia
+
+        </h2>
+
+ 
+
+        <p className="text-white/70 mt-3">
+
+          Objetivo: 5.000 €
+
+        </p>
+
+ 
+
+        <p className="text-white/70">
+
+          Situación actual: 3.000 €
+
+        </p>
+
+ 
+
+      </section>
+
+ 
+
+      {/* PROGRESO */}
+
+ 
+
+      <section className="bg-[#111827] rounded-3xl p-6 mt-4 shadow-xl">
+
+ 
+
+        <div className="flex justify-between items-center">
+
+ 
+
+          <h3 className="font-bold text-white">
+
+            Progreso
+
           </h3>
 
-          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-7">
-            {navItems.map((item) => (
-              <button
-                key={item.title}
-                className={`rounded-3xl border p-5 text-left transition ${
-                  item.primary
-                    ? "border-[#1FA187] bg-[#1FA187]/10"
-                    : "border-white/10 bg-white/5"
-                }`}
-              >
-                <div className="mb-4 text-3xl">
-                  {item.icon}
-                </div>
+ 
 
-                <h4 className="font-black">
-                  {item.title}
-                </h4>
+          <span className="text-[#1FA187] font-bold">
 
-                <p className="mt-2 text-xs text-white/60">
-                  {item.subtitle}
-                </p>
-              </button>
-            ))}
+            60%
+
+          </span>
+
+ 
+
+        </div>
+
+ 
+
+        <div className="mt-4 h-4 bg-white/10 rounded-full overflow-hidden">
+
+ 
+
+          <div
+
+            className="h-full bg-[#1FA187] rounded-full"
+
+            style={{ width: "60%" }}
+
+          />
+
+ 
+
+        </div>
+
+ 
+
+      </section>
+
+ 
+
+      {/* SIGUIENTE ACCIÓN */}
+
+ 
+
+      <section className="bg-[#111827] rounded-3xl p-6 mt-4 shadow-xl">
+
+ 
+
+        <h3 className="font-bold text-[#1FA187]">
+
+          Próxima acción
+
+        </h3>
+
+ 
+
+        <p className="mt-3 text-white leading-7">
+
+          Destinar 250 € este mes al fondo de emergencia para acercarte al próximo hito.
+
+        </p>
+
+ 
+
+      </section>
+
+ 
+
+      {/* HITOS */}
+
+ 
+
+      <section className="bg-[#111827] rounded-3xl p-6 mt-4 shadow-xl">
+
+ 
+
+        <h3 className="font-bold text-white mb-4">
+
+          Hitos de la ruta
+
+        </h3>
+
+ 
+
+        <div className="space-y-3">
+
+ 
+
+          <div className="flex items-center gap-3">
+
+            <span className="text-[#1FA187]">✅</span>
+
+            <span style={{ color: 'white' }}>Punto de partida completado</span>
+
           </div>
-        </section>
 
-        <section className="mt-16 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <p className="font-bold text-[#1FA187]">
-              Chat MoneyMap
-            </p>
+ 
 
-            <h3 className="mt-2 text-3xl font-black">
-              ¿Qué necesitas revisar hoy?
-            </h3>
+          <div className="flex items-center gap-3">
 
-            <div className="mt-6 grid gap-2 sm:grid-cols-2">
-              {quickActions.map((action) => (
-                <button
-                  key={action}
-                  className="rounded-2xl border border-[#1FA187]/20 bg-[#1FA187]/10 p-3 text-left"
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
+            <span className="text-[#1FA187]">✅</span>
 
-            <div className="mt-6 flex gap-3">
-              <input
-                type="text"
-                placeholder="Escribe tu consulta..."
-                className="flex-1 rounded-2xl bg-[#061725] px-4 py-3 outline-none"
-              />
+            <span style={{ color: 'white' }}>Primer informe entregado</span>
 
-              <button className="rounded-2xl bg-[#1FA187] px-4 py-3 font-bold text-[#020B14]">
-                Enviar
-              </button>
-            </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <h3 className="text-3xl font-black">
-              Bienvenido a MoneyMap
-            </h3>
+ 
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Card
-                title="Mi MoneyMap"
-                text="Cuadro de mando financiero."
-              />
+          <div className="flex items-center gap-3">
 
-              <Card
-                title="Informes"
-                text="Informes personalizados."
-              />
+            <span className="text-white/40">⬜</span>
 
-              <Card
-                title="Formación"
-                text="Academia MoneyMap."
-              />
+            <span style={{ color: 'white' }}>75% del objetivo alcanzado</span>
 
-              <Card
-                title="Novedades"
-                text="Noticias y avisos."
-              />
-            </div>
           </div>
-        </section>
-      </div>
+
+ 
+
+          <div className="flex items-center gap-3">
+
+            <span className="text-white/40">⬜</span>
+
+            <span style={{ color: 'white' }}>Objetivo completado</span>
+
+          </div>
+
+ 
+
+        </div>
+
+ 
+
+      </section>
+
+ 
+
     </main>
-  );
-}
 
-function Card({
-  title,
-  text,
-}: {
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-[#061725] p-4">
-      <h4 className="font-bold text-[#1FA187]">
-        {title}
-      </h4>
-
-      <p className="mt-2 text-sm text-white/60">
-        {text}
-      </p>
-    </div>
   );
+
 }
