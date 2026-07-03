@@ -17,9 +17,9 @@ export default function PildorasPage() {
         Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
       };
       const partes = fechaStr.split(" ");
-      const dia = parseInt(partes, 10);
-      const mes = meses[partes];
-      const anio = parseInt(partes, 10);
+      const dia = parseInt(partes[0], 10);   // [0] coge el primer elemento (el día)
+      const mes = meses[partes[1]];          // [1] coge el segundo elemento (el mes)
+      const anio = parseInt(partes[2], 10);  // [2] coge el tercer elemento (el año)
       
       const fechaPildora = new Date(anio, mes, dia);
       const fechaActual = new Date();
