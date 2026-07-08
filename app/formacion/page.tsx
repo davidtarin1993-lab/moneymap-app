@@ -16,8 +16,8 @@ export default function FormacionPage() {
           </p>
         </header>
 
-        {/* Ajustado a grid-cols-4 en escritorio para albergar el nuevo botón */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
+        {/* Ajustado a grid-cols-5 en escritorio para albergar el test de perfil */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-stretch">
           
           {/* Tarjeta 1: Noticias */}
           <Link href="/formacion/noticias" className="group block bg-[#111827] rounded-3xl p-5 shadow-sm border border-white/5 transition-all duration-300 hover:border-blue-500/40 hover:-translate-y-1 h-full">
@@ -58,7 +58,7 @@ export default function FormacionPage() {
             </div>
           </Link>
 
-          {/* NUEVO Selector 4: Calculadora de Interés Compuesto */}
+          {/* Tarjeta 4: Calculadora de Interés Compuesto */}
           <Link href="/formacion/calculadora" className="group block bg-[#111827] rounded-3xl p-5 shadow-sm border border-white/5 transition-all duration-300 hover:border-violet-500/40 hover:-translate-y-1 h-full">
             <div className="flex flex-col h-full justify-between">
               <div className="flex items-start gap-3">
@@ -66,6 +66,19 @@ export default function FormacionPage() {
                 <div>
                   <h2 className="text-sm font-bold text-white group-hover:text-violet-400 transition-colors">Calculadora</h2>
                   <p className="mt-1 text-[11px] text-white/60 leading-normal">Simula tus objetivos y proyecta tu futuro financiero futuro.</p>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Tarjeta 5: Encuesta Económica / Perfil de Inversor */}
+          <Link href="/formacion/survey_economy" className="group block bg-[#111827] rounded-3xl p-5 shadow-sm border border-white/5 transition-all duration-300 hover:border-fuchsia-500/40 hover:-translate-y-1 h-full">
+            <div className="flex flex-col h-full justify-between">
+              <div className="flex items-start gap-3">
+                <div className="bg-fuchsia-500/10 p-2.5 rounded-xl text-xl">🎯</div>
+                <div>
+                  <h2 className="text-sm font-bold text-white group-hover:text-fuchsia-400 transition-colors">Perfilador</h2>
+                  <p className="mt-1 text-[11px] text-white/60 leading-normal">Encuesta económica para descubrir tu perfil de inversor ideal.</p>
                 </div>
               </div>
             </div>
