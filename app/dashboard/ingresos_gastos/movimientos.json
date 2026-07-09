@@ -1,0 +1,42 @@
+[
+  {
+    "fecha": "2026-06-01",
+    "descripcion": "Nómina Principal David",
+    "importe": 2500,
+    "tipo": "ingreso",
+    "categoria": "Ingresos",
+    "naturaleza": "no aplica"
+  },
+  {
+    "fecha": "2026-06-02",
+    "descripcion": "Alquiler de la Vivienda",
+    "importe": -850,
+    "tipo": "gasto",
+    "categoria": "Vivienda",
+    "naturaleza": "fijo"
+  },
+  {
+    "fecha": "2026-06-05",
+    "descripcion": "Compra Supermercado",
+    "importe": -320,
+    "tipo": "gasto",
+    "categoria": "Alimentación",
+    "naturaleza": "variable"
+  },
+  {
+    "fecha": "2026-06-10",
+    "descripcion": "Suscripciones Digitales",
+    "importe": -30,
+    "tipo": "gasto",
+    "categoria": "Ocio",
+    "naturaleza": "fijo"
+  },
+  {
+    "fecha": "2026-06-15",
+    "descripcion": "Cena de Fin de Semana",
+    "importe": -120,
+    "tipo": "gasto",
+    "categoria": "Ocio",
+    "naturaleza": "variable"
+  }
+]

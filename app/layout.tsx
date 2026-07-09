@@ -17,7 +17,7 @@ export default function RootLayout({
 
     <html lang="es">
 
-      <body className="bg-white">
+      <body className="bg-[#0F172A] antialiased">
          
 
         <header className="bg-white border-b border-slate-200">
