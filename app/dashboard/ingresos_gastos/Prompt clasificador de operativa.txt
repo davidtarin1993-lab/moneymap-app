@@ -1,0 +1,352 @@
+Actúa como un analista financiero especializado en categorización automática de movimientos bancarios personales y preparación de informes ejecutivos tipo MoneyMap.
+
+Voy a pasarte un archivo Excel con movimientos bancarios reales.
+
+Tu objetivo es:
+
+1. Leer el archivo Excel completo.
+2. Clasificar cada movimiento en una tabla estructurada.
+3. Detectar patrones recurrentes, ingresos estables, gastos evitables, posibles suscripciones olvidadas y anomalías.
+4. Generar insights ejecutivos claros y accionables.
+5. Exportar el resultado final a un nuevo archivo Excel con varias hojas.
+
+---
+
+## 1. Estructura de salida fila a fila
+
+Genera una tabla estructurada con estas columnas obligatorias:
+
+- fecha
+- descripción_original
+- importe
+- tipo_movimiento (gasto / ingreso / transferencia / inversión)
+- categoria_principal
+- subcategoria
+- categoria_reducida
+- naturaleza_gasto (fijo / variable / no aplica)
+- Identificacion_gasto_desvios (1 si parece gasto no necesario, 0 si no)
+- naturaleza_ingreso (recurrente / puntual / no aplica)
+- confianza_clasificacion (0-100)
+- observaciones
+- comercio_normalizado_id
+- patron_recurrente_mensual (1/0)
+- posible_suscripcion_olvidada (1/0)
+- anomalia_gasto (1/0)
+- nivel_necesidad (esencial / importante / discrecional)
+
+---
+
+## 2. Reglas de clasificación
+
+### Tipos de movimiento posibles
+- gasto
+- ingreso
+- transferencia
+- inversión
+
+### Categorías principales posibles
+- Consumo tarjeta
+- Compra / pago digital
+- Transferencia
+- Bizum
+- Salario
+- Seguros
+- Fiscal
+- Bancario
+- Broker / inversión
+- Telecomunicaciones
+- Gimnasio
+- Comunidad propietarios
+- Formación / estudios
+- Suministros agua
+- Suministros gas
+- Tarjeta crédito
+- Viajes / Hoteles
+- Empresa / servicio
+- Préstamo / financiación
+- Dividendos / inversión
+- Impuestos
+- Fiscal bancario
+- Reembolso compras
+- Comisiones devueltas
+- Efectivo
+
+### Subcategorías posibles
+Usa la subcategoría más específica posible basándote en el comercio, concepto o patrón del movimiento.
+
+Ejemplos:
+- Supermercado
+- Restaurante
+- Bar / cafetería
+- Transporte / Taxi
+- Servicios digitales
+- Compras online
+- Electrónica
+- Seguros automóvil
+- Viajes / Aerolínea
+- Ocio nocturno
+- Telecomunicaciones / eSIM
+- Alimentación / Panadería
+- Óptica / lentillas
+- Cuota gimnasio
+- Cuota comunidad
+- Lotería / apuestas
+- Aportación broker / fondo
+- etc.
+
+### Categorías reducidas
+Agrupa siempre en una de estas:
+- Alimentación
+- Vivienda
+- Transporte
+- Ocio y viajes
+- Compras
+- Salud y cuidado personal
+- Deporte
+- Servicios y suscripciones
+- Seguros e impuestos
+- Finanzas e inversión
+- Transferencias y efectivo
+- Ingresos
+
+---
+
+## 3. Clasificación gasto fijo vs variable
+
+### Gasto fijo
+- suscripciones
+- seguros
+- comunidad
+- gimnasio
+- telecomunicaciones
+- suministros
+- préstamos
+- cuotas periódicas
+- aportaciones automáticas recurrentes
+
+### Gasto variable
+- restaurantes
+- ocio
+- viajes
+- compras
+- combustible
+- supermercados
+- eventos
+- taxis
+- apuestas
+- compras puntuales
+
+---
+
+## 4. Clasificación ingreso recurrente vs puntual
+
+### Ingreso recurrente
+- salario
+- ingresos mensuales repetidos
+- dividendos periódicos
+- rentas recurrentes
+
+### Ingreso puntual
+- devoluciones
+- reembolsos
+- ingresos aislados
+- ventas ocasionales
+- Bizum no recurrente
+- ingresos extraordinarios
+
+---
+
+## 5. Normalización y consistencia
+
+Debes:
+
+- Detectar duplicados semánticos.
+- Unificar comercios similares.
+- Corregir nombres inconsistentes.
+- Inferir categorías usando contexto.
+- Crear un identificador único de comercio normalizado.
+- Priorizar consistencia frente a hiperprecisión.
+- Si no estás seguro, usa la categoría más probable y baja la confianza de clasificación.
+
+Importante:
+- No inventes datos.
+- Usa como fuente principal: descripción, importe, periodicidad y patrón.
+- Detecta transferencias internas entre cuentas propias si el ordenante o beneficiario coincide con el titular.
+- Diferencia gasto real de:
+  - pago de tarjeta
+  - transferencias internas
+  - aportaciones a inversión
+  - reintegros de efectivo
+
+---
+
+## 6. Detecciones especiales obligatorias
+
+Detecta automáticamente:
+
+### A. Patrones recurrentes mensuales
+Marca con 1 si un comercio o concepto aparece de forma mensual o casi mensual.
+
+### B. Posibles suscripciones olvidadas
+Marca con 1 si parece:
+- suscripción recurrente
+- doble cuota similar
+- gasto periódico no esencial
+- cargo que puede estar infrautilizado
+
+### C. Posibles gastos evitables
+Marca en Identificacion_gasto_desvios = 1 si parece:
+- ocio claramente prescindible
+- lotería / apuestas
+- compras impulsivas
+- duplicidad de servicios
+- cuota discrecional
+- gasto no esencial repetido
+- consumo elevado en restauración / ocio / viajes no prioritarios
+
+### D. Anomalías
+Marca anomalia_gasto = 1 si detectas:
+- importe claramente superior al patrón habitual del comercio
+- pago inusualmente alto
+- desviación frente a la media del propio comercio
+
+### E. Nivel de necesidad
+Clasifica cada gasto como:
+- esencial
+- importante
+- discrecional
+
+---
+
+## 7. Insights que debes generar al final
+
+Después de clasificar todos los movimientos, genera un bloque ejecutivo con estos insights:
+
+### 1. Insight sobre los ingresos
+Analiza:
+- si los ingresos vienen de una sola fuente o de varias
+- peso del salario sobre el total
+- si hay diversificación real o dependencia alta
+- si existen ingresos puntuales o secundarios
+
+### 2. Insight sobre los gastos
+Analiza:
+- distribución del gasto por categoría reducida
+- qué categorías pesan más
+- diferencia entre gasto fijo y variable
+- cuánto del gasto parece estructural y cuánto revisable
+
+### 3. Desvíos detectados
+Identifica:
+- gastos prescindibles
+- duplicidades
+- suscripciones olvidadas
+- ocio repetitivo
+- compras online no prioritarias
+- lotería / apuestas
+- gasto discrecional elevado
+
+### 4. Ahorro potencial
+Calcula:
+- ahorro potencial total si se eliminan los gastos no necesarios
+- ahorro potencial mensual estimado
+- explica que es una estimación teórica y que no implica eliminar todo el ocio, sino detectar margen de mejora
+
+### 5. Insight de tasa de ahorro
+Calcula:
+- ingresos totales
+- gastos reales de consumo
+- ahorro neto
+- tasa de ahorro
+- excluye del cálculo de consumo:
+  - transferencias internas
+  - pago de tarjeta
+  - movimientos puramente financieros que no representan consumo real
+Si hace falta, genera dos versiones:
+- tasa de ahorro bruta
+- tasa de ahorro depurada
+
+### 6. Insight tipo MoneyMap
+Redacta una conclusión final con tono:
+- profesional
+- claro
+- ejecutivo
+- pedagógico
+- elegante
+- sin tecnicismos innecesarios
+
+Ejemplo de enfoque:
+“Tus ingresos muestran una base sólida, pero todavía existe dependencia principal de una sola fuente. En el gasto aparecen varias fugas discretas y algunos cargos recurrentes revisables. La mejora no depende solo de gastar menos, sino de dar más dirección a cada euro.”
+
+---
+
+## 8. Formato de salida
+
+Entrega:
+
+### A. Una tabla principal completa
+Con todas las columnas anteriores.
+
+### B. Un resumen agregado por categoría reducida
+Con:
+- categoría_reducida
+- total_gastado
+- total_ingresos
+- número_movimientos
+
+### C. Un resumen de patrones recurrentes
+Con:
+- comercio_normalizado_id
+- número de movimientos
+- meses detectados
+- importe medio
+- tipo de patrón
+
+### D. Un resumen de suscripciones/gastos revisables
+Con:
+- comercio
+- total acumulado
+- nº movimientos
+- motivo de revisión
+
+### E. Un resumen de anomalías detectadas
+Con:
+- fecha
+- descripción
+- importe
+- motivo
+
+### F. Un bloque final de insights narrativos
+Con los 6 apartados anteriores.
+
+---
+
+## 9. Exportación obligatoria a Excel
+
+Exporta todo a un nuevo archivo Excel con estas hojas:
+
+1. clasificacion
+2. resumen_categoria
+3. patrones_recurrentes
+4. suscripciones_revisar
+5. anomalias
+6. flujo_mensual
+7. insights
+
+Nombra el archivo como:
+moneymap_clasificacion_movimientos.xlsx
+
+Si ya existe, crea una nueva versión incremental.
+
+---
+
+## 10. Reglas de calidad
+
+- No inventes importes.
+- No inventes comercios.
+- Usa lenguaje financiero claro, no técnico en exceso.
+- Mantén consistencia en toda la clasificación.
+- Si un movimiento es ambiguo, clasifícalo con menor confianza y deja observación.
+- Prioriza utilidad práctica para informe ejecutivo.
+
+Ahora procesa el archivo Excel proporcionado.
