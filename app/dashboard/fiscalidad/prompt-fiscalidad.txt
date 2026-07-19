@@ -1,0 +1,278 @@
+# MONEYMAP · EXTRACCIÓN ESTANDARIZADA DE DECLARACIONES IRPF
+
+Voy a adjuntar una o varias declaraciones de la renta (Modelo 100 IRPF) en formato PDF.
+
+Analiza TODOS los documentos adjuntos y genera un único archivo Excel (.xlsx) con una extracción homogénea y reutilizable para MoneyMap.
+
+---
+
+## OBJETIVO
+
+Extraer información financiera y fiscal estructurada de cada declaración para alimentar modelos, dashboards e informes MoneyMap.
+
+---
+
+## ARCHIVO DE SALIDA
+
+Generar un único Excel llamado:
+
+Extraccion_Renta_MoneyMap.xlsx
+
+Con las siguientes hojas:
+
+### Hoja 1: Extracción
+
+Formato vertical:
+
+| Metrica | Fecha operativa | Importe | Casilla | Ejercicio | Documento origen |
+|----------|----------|----------|----------|----------|----------|
+
+Donde:
+
+- Metrica = nombre de la métrica.
+- Fecha operativa = 01/01/AÑO_DECLARACION.
+- Importe = valor numérico con dos decimales.
+- Casilla = número de casilla utilizada.
+- Ejercicio = año fiscal.
+- Documento origen = nombre del PDF.
+
+Debe existir una fila por métrica y ejercicio.
+
+---
+
+## MÉTRICAS A EXTRAER
+
+Extraer exactamente estas métricas:
+
+- Ingresos trabajo
+- Retenciones trabajo
+- Ingresos capital mobiliario
+- Ingresos inmobiliarios netos
+- Ganancias patrimoniales
+- Base imponible general
+- Base imponible ahorro
+- Cuota íntegra estatal
+- Cuota íntegra autonómica
+- Cuota líquida total
+- Retenciones totales
+- Resultado declaración
+- Aportaciones pensiones
+- Ingresos totales
+- Margen fiscal sobre ingresos
+
+---
+
+## REGLAS DE EXTRACCIÓN
+
+### Ingresos trabajo
+
+Utilizar:
+
+"Total ingresos íntegros computables"
+
+de Rendimientos del Trabajo.
+
+---
+
+### Retenciones trabajo
+
+Utilizar:
+
+"Por rendimientos del trabajo"
+
+dentro del apartado:
+
+Retenciones y demás pagos a cuenta.
+
+---
+
+### Ingresos capital mobiliario
+
+Utilizar:
+
+"Total de ingresos íntegros"
+
+del apartado Rendimientos del Capital Mobiliario.
+
+No utilizar el rendimiento neto.
+
+---
+
+### Ingresos inmobiliarios netos
+
+Utilizar:
+
+- renta inmobiliaria imputada
+- rentas inmobiliarias netas
+
+Si la vivienda es habitual y no existe renta computable:
+
+informar:
+
+0
+
+---
+
+### Ganancias patrimoniales
+
+Utilizar el saldo neto de ganancias y pérdidas patrimoniales que se integra en la Base Imponible del Ahorro.
+
+Reglas:
+
+- Si aparece saldo positivo → utilizar el importe positivo.
+- Si aparece saldo negativo → utilizar el importe negativo.
+
+---
+
+### Base imponible general
+
+Utilizar:
+
+Base imponible general
+
+---
+
+### Base imponible ahorro
+
+Utilizar:
+
+Base imponible del ahorro
+
+---
+
+### Cuota íntegra estatal
+
+Utilizar:
+
+Cuota íntegra estatal
+
+---
+
+### Cuota íntegra autonómica
+
+Utilizar:
+
+Cuota íntegra autonómica
+
+---
+
+### Cuota líquida total
+
+Utilizar:
+
+Cuota líquida incrementada total
+
+o equivalente.
+
+---
+
+### Retenciones totales
+
+Utilizar:
+
+Total pagos a cuenta
+
+---
+
+### Resultado declaración
+
+Utilizar:
+
+Resultado de la declaración
+
+---
+
+### Aportaciones pensiones
+
+Utilizar:
+
+Reducción aplicada por aportaciones a sistemas de previsión social.
+
+Si no existe:
+
+informar 0.
+
+---
+
+## MÉTRICAS DERIVADAS
+
+### Ingresos totales
+
+Calcular mediante:
+
+Ingresos trabajo
++ Ingresos capital mobiliario
++ Ingresos inmobiliarios netos
++ Ganancias patrimoniales
+
+---
+
+### Margen fiscal sobre ingresos
+
+Calcular mediante:
+
+Ingresos totales
+- Retenciones totales
+- Resultado declaración
+
+IMPORTANTE:
+
+Esta métrica es un IMPORTE.
+NO es un porcentaje.
+
+---
+
+## HOJA 2 · RESUMEN
+
+Crear una hoja llamada:
+
+Resumen
+
+Formato horizontal:
+
+| Metrica | 2021 | 2022 | 2023 | 2024 | 2025 |
+|----------|----------|----------|----------|----------|----------|
+
+Incluir todas las métricas.
+
+---
+
+## HOJA 3 · DICCIONARIO
+
+Crear una hoja llamada:
+
+Diccionario
+
+Con:
+
+| Métrica | Definición | Regla de extracción | Casilla |
+|----------|----------|----------|----------|
+
+---
+
+## VALIDACIONES OBLIGATORIAS
+
+- Revisar todas las páginas de todos los PDFs.
+- Mantener dos decimales.
+- Conservar signo negativo cuando aplique.
+- Si una métrica no existe → informar 0.
+- Indicar siempre la casilla utilizada.
+- No resumir.
+- No generar tablas en el chat.
+- Generar únicamente el Excel final listo para descargar.
+
+---
+
+## SALIDA ESPERADA
+
+Entregar únicamente:
+
+✅ Archivo Excel final generado
+
+con las tres hojas:
+
+- Extracción
+- Resumen
+- Diccionario
+
+y todas las métricas calculadas y validadas.
