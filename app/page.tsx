@@ -1,106 +1,91 @@
-import Image from "next/image";
-import Link from "next/link";
-import { FileText, Calendar, Compass } from "lucide-react"; // Importamos iconos para enriquecer los datos
+"use client";
 
-export default function HomePage() {
+import React from 'react';
+import Link from 'next/link';
+import { LogIn, ArrowRight, ShieldCheck, TrendingUp, Cpu, CheckCircle } from 'lucide-react';
+
+export default function LandingPage() {
   return (
-    <main className="max-w-7xl mx-auto px-4 pb-24 md:pb-6">
-
-      {/* HERO PRINCIPAL */}
-      <section className="relative bg-white rounded-3xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.12)]"> 
-        <div className="grid lg:grid-cols-2 items-center min-h-[340px]">
-          {/* TEXTO */}
-          <div className="relative z-20 p-6 md:p-8">
-            <div className="inline-flex items-center rounded-full bg-[#1FA187]/10 px-4 py-2 text-sm font-medium text-[#1FA187] mb-4">
-              👋 Bienvenido de nuevo
-            </div>
-            <h1 className="text-4xl md:text-5xl font-black text-[#0B3A6E]">
-              Hola David.
-            </h1>
-            <h2 className="mt-3 text-xl md:text-2xl font-bold text-[#1FA187]">
-              Tu dinero, con dirección.
-            </h2>
-            <p className="mt-4 text-slate-600 text-base md:text-lg leading-7 max-w-xl">
-              La claridad precede a las buenas decisiones.
-              Consulta tu situación actual, revisa tu evolución
-              financiera y continúa avanzando in tu ruta.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/dashboard" className="bg-[#0B3A6E] text-white px-5 py-3 rounded-2xl font-bold hover:opacity-90 transition">
-                Ver Mi MoneyMap
-              </Link>
-              <Link href="/chat" className="border border-[#0B3A6E]/20 text-[#0B3A6E] px-5 py-3 rounded-2xl font-bold hover:bg-slate-50 transition">
-                Abrir Chat
-              </Link>
-            </div>
+    <div className="w-full min-h-screen bg-white text-slate-800 font-sans antialiased flex flex-col justify-between selection:bg-[#0B3A6E]/10">
+      
+      {/* 1. BARRA DE NAVEGACIÓN SUPERIOR COMMERCIAL */}
+      <nav className="w-full max-w-5xl mx-auto px-4 py-4 flex items-center justify-between border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-[#0B3A6E] rounded-xl flex items-center justify-center text-white text-sm font-black shadow-sm">
+            M
           </div>
-
-          {/* IMAGEN */}
-          <div className="relative flex items-center justify-center h-full min-h-[280px]">
-            <Image
-              src="/Multimedia/Pagina_inicial.png"
-              alt="MoneyMap"
-              width={300}
-              height={300}
-              priority
-              className="object-contain max-h-[1000px] w-auto opacity-95"
-            />
-          </div>
+          <span className="text-base font-black text-[#0B3A6E] tracking-tight uppercase">MoneyMap</span>
         </div>
-      </section>
+        
+        <Link 
+          href="/login" 
+          className="text-xs font-black uppercase tracking-wider px-4 py-2 border border-slate-200 rounded-xl text-[#0B3A6E] bg-white hover:bg-slate-50 transition-all flex items-center gap-1.5"
+        >
+          <LogIn size={12} /> Acceso Clientes
+        </Link>
+      </nav>
 
-{/* CAJA UNIFICADA DE RESUMEN FINANCIERO (ESTILO COMPACTO VERTICAL MÓVIL) */}
-<section className="bg-[#0B3A6E] rounded-2xl p-4 mt-4 shadow-xl text-white">
-  
-  {/* Cabecera compacta con doble título */}
-  <div className="border-b border-white/10 pb-3 mb-3">
-    <h3 className="text-xl font-black tracking-tight">
-      Resumen de tu cuenta
-    </h3>
-    <p className="text-[#1FA187] text-xs font-bold mt-0.5 uppercase tracking-wider flex items-center gap-1.5">
-      <span className="w-2 h-2 rounded-full bg-[#1FA187] inline-block animate-pulse"></span>
-      Estado de situación actual
-    </p>
-  </div>
+      {/* 2. CONTENIDO HERO PRINCIPAL DE VENTAS (SIN BANNER SUPERIOR) */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center max-w-3xl mx-auto space-y-6">
 
-  {/* Contenedor vertical compacto */}
-  <div className="flex flex-col gap-3">
-    
-    {/* Indicador 1 */}
-    <div className="flex items-center gap-3 bg-white/5 p-2.5 rounded-xl">
-      <div className="p-2 bg-white/10 rounded-lg shrink-0">
-        <FileText className="w-5 h-5 text-[#1FA187]" />
-      </div>
-      <div>
-        <p className="text-white/50 text-[10px] font-medium uppercase tracking-wider leading-none">Último informe disponible</p>
-        <h4 className="text-base font-bold mt-0.5">Junio 2026</h4>
-      </div>
+        {/* Titular de Impacto Corporativo */}
+        <h1 className="text-3xl md:text-5xl font-black text-[#0B3A6E] tracking-tight leading-tight uppercase">
+          Tu dinero necesita <span className="text-[#1FA187]">dirección</span>, <br className="hidden sm:inline" /> no más esfuerzo.
+        </h1>
+
+        {/* Subtítulo de propuesta de valor */}
+        <p className="text-slate-500 text-sm md:text-base font-medium max-w-xl leading-relaxed">
+          Centraliza tus flujos de caja, analiza tu mix de ingresos multicampaña y optimiza tu eficiencia fiscal de forma automatizada.
+        </p>
+
+        {/* BOTÓN DE ACCIÓN PRINCIPAL AL LOGIN */}
+        <div className="pt-2">
+          <Link
+            href="/login"
+            className="bg-[#0B3A6E] text-white text-xs font-black uppercase tracking-wider px-6 py-3.5 rounded-2xl flex items-center gap-2 shadow-[0_8px_25px_rgba(11,58,110,0.15)] hover:bg-[#11498a] hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            Iniciar Sesión <ArrowRight size={13} />
+          </Link>
+        </div>
+        {/* 3. PROPUESTAS DE VALOR DESTACADAS */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-12 w-full max-w-3xl text-left">
+          
+          <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl space-y-1.5 hover:shadow-md hover:border-slate-300 transition-all">
+            <div className="text-[#1FA187] font-black flex items-center gap-1.5 text-xs uppercase tracking-wider">
+              <TrendingUp size={14} /> Mix de Ingresos
+            </div>
+            <p className="text-[11px] text-slate-500 font-semibold leading-normal">
+              Visualización combinada y evolutiva de rentas del trabajo y del ahorro.
+            </p>
+          </div>
+
+          <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl space-y-1.5 hover:shadow-md hover:border-slate-300 transition-all">
+            <div className="text-[#0B3A6E] font-black flex items-center gap-1.5 text-xs uppercase tracking-wider">
+              <ShieldCheck size={14} /> Presión Fiscal
+            </div>
+            <p className="text-[11px] text-slate-500 font-semibold leading-normal">
+              Auditoría automatizada de tu tipo medio real de gravamen y ratios de IRPF.
+            </p>
+          </div>
+
+          <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl space-y-1.5 hover:shadow-md hover:border-slate-300 transition-all">
+            <div className="text-blue-500 font-black flex items-center gap-1.5 text-xs uppercase tracking-wider">
+              <Cpu size={14} /> Gestión de Citas
+            </div>
+            <p className="text-[11px] text-slate-500 font-semibold leading-normal">
+              Sincronización de asesoramiento uno a uno bloqueando horarios ocupados.
+            </p>
+          </div>
+
+        </div>
+
+      </main>
+
+      {/* 4. PIE DE PÁGINA */}
+      <footer className="w-full text-center py-4 border-t border-slate-100 text-slate-400 text-[10px] font-bold tracking-wide uppercase">
+        © {new Date().getFullYear()} MoneyMap. Todos los derechos reservados.
+      </footer>
+
     </div>
-
-    {/* Indicador 2 */}
-    <div className="flex items-center gap-3 bg-white/5 p-2.5 rounded-xl">
-      <div className="p-2 bg-white/10 rounded-lg shrink-0">
-        <Calendar className="w-5 h-5 text-[#1FA187]" />
-      </div>
-      <div>
-        <p className="text-white/50 text-[10px] font-medium uppercase tracking-wider leading-none">Próximo informe</p>
-        <h4 className="text-base font-bold mt-0.5">01 Julio 2026</h4>
-      </div>
-    </div>
-
-    {/* Indicador 3 */}
-    <div className="flex items-center gap-3 bg-white/5 p-2.5 rounded-xl">
-      <div className="p-2 bg-white/10 rounded-lg shrink-0">
-        <Compass className="w-5 h-5 text-[#1FA187]" />
-      </div>
-      <div>
-        <p className="text-white/50 text-[10px] font-medium uppercase tracking-wider leading-none">Ruta activa</p>
-        <h4 className="text-base font-bold mt-0.5">Fondo de emergencia</h4>
-      </div>
-    </div>
-
-  </div>
-</section>
-    </main>
   );
 }

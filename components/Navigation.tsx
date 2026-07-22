@@ -15,7 +15,7 @@ import {
 
 // Array secuencial con Cita en el centro (Posición 4) usando el azul corporativo
 const items = [
-  { label: "Inicio", path: "/", icon: House, isFlotante: false },
+  { label: "Inicio", path: "/bienvenida", icon: House, isFlotante: false },
   { label: "Mapa", path: "/dashboard", icon: ChartColumn, isFlotante: false },
   { label: "Ruta", path: "/ruta", icon: MapPinned, isFlotante: false },
   { label: "Cita", path: "/cita", icon: CalendarCheck, isFlotante: true }, // BOTÓN CENTRAL DESTACADO
@@ -27,6 +27,11 @@ const items = [
 export default function Navigation() {
   const pathname = usePathname();
 
+    // 🛠️ OCULTAR EN LANDING, LOGIN Y CUALQUIER RUTA DE ADMINISTRADOR
+  if (pathname === "/" || pathname === "/login" || pathname.startsWith("/admin")) {
+    return null;
+  }
+  
   return (
     <nav
       className="
