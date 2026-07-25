@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogIn, Mail, Lock, ShieldAlert, KeyRound, CheckCircle } from "lucide-react";
+import { LogIn, Mail, Lock, ShieldAlert, KeyRound, CheckCircle, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -14,6 +14,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [cargando, setCargando] = useState<boolean>(false);
+
+  // Estados para el modal de "¿Olvidaste tu contraseña?"
+  const [mostrarRecuperar, setMostrarRecuperar] = useState<boolean>(false);
+  const [emailRecuperar, setEmailRecuperar] = useState<string>("");
+  const [enviandoRecuperar, setEnviandoRecuperar] = useState<boolean>(false);
+  const [enviadoRecuperar, setEnviadoRecuperar] = useState<boolean>(false);
+  const [errorRecuperar, setErrorRecuperar] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -34,31 +41,21 @@ export default function LoginPage() {
     setCargando(true);
 
     try {
-      /**
-       * 1. Login con Supabase
-       */
       const { data: loginData, error: loginError } =
         await supabase.auth.signInWithPassword({
           email,
           password,
         });
-      console.log("LOGIN DATA:", loginData);
-      console.log("LOGIN ERROR:", loginError);
 
       if (loginError) {
         throw new Error(loginError.message);
       }
 
       const user = loginData.user;
-      console.log("usuario logado");
-      console.log(user);
       if (!user) {
         throw new Error("No se ha podido recuperar el usuario autenticado.");
       }
 
-      /**
-       * 2. Recordar email si el usuario lo marca
-       */
       if (typeof window !== "undefined") {
         if (recordar) {
           localStorage.setItem("moneymap_remembered_email", email);
@@ -67,16 +64,12 @@ export default function LoginPage() {
         }
       }
 
-      /**
-       * 3. Buscar perfil en la tabla profiles
-       */
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("id, email, nombre, role")
         .eq("id", user.id)
         .single();
-        console.log("PROFILE:", profile);
-        console.log("PROFILE ERROR:", profileError);
+
       if (profileError) {
         throw new Error(
           "Login correcto, pero no se ha encontrado el perfil del usuario en la tabla profiles."
@@ -87,28 +80,18 @@ export default function LoginPage() {
         throw new Error("El usuario no tiene perfil asociado.");
       }
 
-      /**
-       * 4. Redirección por rol
-       */
-      console.log("ROLE:")
-      console.log(profile.role)
       if (profile.role === "admin") {
         setMensajeExito("¡Éxito! Iniciando sesión como Administrador...");
-        console.log("VOY A ADMIN")
         router.push("/admin");
         return;
       }
 
       if (profile.role === "user") {
         setMensajeExito("¡Éxito! Redirigiendo a la bienvenida...");
-        console.log("VOY A BIENVENIDA")
         router.push("/bienvenida");
         return;
       }
 
-      /**
-       * 5. Si el rol no es válido
-       */
       throw new Error("El usuario no tiene un rol válido asignado.");
 
     } catch (err: any) {
@@ -116,6 +99,35 @@ export default function LoginPage() {
       setError(err?.message || "Error al iniciar sesión. Inténtalo de nuevo.");
     } finally {
       setCargando(false);
+    }
+  };
+
+  const abrirModalRecuperar = () => {
+    setErrorRecuperar("");
+    setEnviadoRecuperar(false);
+    setEmailRecuperar(email); // precargamos con el email ya escrito en el login, si lo hay
+    setMostrarRecuperar(true);
+  };
+
+  const handleRecuperarPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorRecuperar("");
+    setEnviandoRecuperar(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailRecuperar, {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/restablecer-contrasena`,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setEnviadoRecuperar(true);
+    } catch (err: any) {
+      setErrorRecuperar(err?.message || "No se pudo enviar el email de recuperación.");
+    } finally {
+      setEnviandoRecuperar(false);
     }
   };
 
@@ -203,6 +215,7 @@ export default function LoginPage() {
 
             <button
               type="button"
+              onClick={abrirModalRecuperar}
               className="text-[#0B3A6E] font-extrabold hover:underline flex items-center gap-0.5"
             >
               <KeyRound size={10} />
@@ -224,6 +237,74 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
+
+      {/* MODAL: ¿Olvidaste tu contraseña? */}
+      {mostrarRecuperar && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 border border-slate-200 shadow-2xl relative space-y-4">
+            <button
+              onClick={() => setMostrarRecuperar(false)}
+              className="absolute top-4 right-4 p-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-all"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="text-center space-y-1">
+              <div className="w-10 h-10 bg-[#0B3A6E]/5 text-[#0B3A6E] rounded-full flex items-center justify-center mx-auto">
+                <KeyRound size={18} />
+              </div>
+              <h3 className="text-sm font-black text-[#0B3A6E] uppercase tracking-tight">
+                Recuperar contraseña
+              </h3>
+              <p className="text-[11px] text-slate-400 font-medium px-2">
+                Te enviaremos un enlace a tu correo para crear una contraseña nueva.
+              </p>
+            </div>
+
+            {enviadoRecuperar ? (
+              <div className="py-4 text-center space-y-2">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-200">
+                  <CheckCircle size={18} />
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium px-2">
+                  Si ese correo existe en nuestro sistema, te hemos enviado un enlace. Revisa tu bandeja de entrada o spam.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleRecuperarPassword} className="space-y-3">
+                <div className="space-y-1">
+                  <label className="block text-[8.5px] text-slate-500 font-bold uppercase tracking-wider pl-1">
+                    Correo Electrónico
+                  </label>
+                  <div className="relative">
+                    <Mail size={12} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="ejemplo@moneymap.com"
+                      value={emailRecuperar}
+                      onChange={(e) => setEmailRecuperar(e.target.value)}
+                      className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-[#0B3A6E] font-medium"
+                    />
+                  </div>
+                </div>
+
+                {errorRecuperar && (
+                  <p className="text-red-500 text-[10px] font-bold text-center">{errorRecuperar}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={enviandoRecuperar}
+                  className="w-full bg-[#0B3A6E] hover:bg-[#11498a] disabled:opacity-60 text-white text-xs font-black uppercase tracking-wider py-2.5 rounded-xl transition-all"
+                >
+                  {enviandoRecuperar ? "Enviando..." : "Enviar enlace"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
