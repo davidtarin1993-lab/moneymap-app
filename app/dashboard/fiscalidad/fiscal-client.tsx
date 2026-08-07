@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Filter, Wallet, BarChart3, HelpCircle } from 'lucide-react';
+import { supabase } from "@/lib/supabase";
 
 interface RegistroFiscal {
   ejercicio: string;
@@ -552,7 +553,163 @@ export default function FiscalidadClientDashboard({ datosExcel }: FiscalProps) {
 
         </div>
       </section>
+      <AnalisisIAFiscalSection
+        registrosFiltrados={registrosFiltrados}
+        rangoEjercicios={`${anioInicio} - ${anioFin}`}
+      />
 
     </div>
+  );
+}
+
+
+
+
+
+function AnalisisIAFiscalSection({
+  registrosFiltrados,
+  rangoEjercicios,
+}: {
+  registrosFiltrados: RegistroFiscal[];
+  rangoEjercicios: string;
+}) {
+  const [mensajes, setMensajes] = useState<{ rol: "usuario" | "ia"; contenido: string }[]>([]);
+  const [pregunta, setPregunta] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [cargandoInicial, setCargandoInicial] = useState(true);
+  const [usadas, setUsadas] = useState(0);
+  const [limite, setLimite] = useState(3);
+  const [restantes, setRestantes] = useState<number | null>(null);
+  const [limiteAlcanzado, setLimiteAlcanzado] = useState(false);
+
+  useEffect(() => {
+    async function cargarEstadoInicial() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) return;
+
+        const response = await fetch("/api/dashboard/analisis-ia-fiscal", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await response.json();
+        if (!response.ok) return;
+
+        setUsadas(data.usadas);
+        setLimite(data.limite);
+        setRestantes(data.restantes);
+        setLimiteAlcanzado(data.restantes <= 0);
+
+        setMensajes((data.historial ?? []).map((m: any) => ({ rol: m.rol, contenido: m.contenido })));
+      } catch (err) {
+        console.error("Error al cargar el estado del especialista fiscal:", err);
+      } finally {
+        setCargandoInicial(false);
+      }
+    }
+
+    cargarEstadoInicial();
+  }, []);
+
+  const enviarConsulta = async (preguntaEnviada?: string) => {
+    if (cargando || limiteAlcanzado) return;
+    setCargando(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+
+      const response = await fetch("/api/dashboard/analisis-ia-fiscal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          pregunta: preguntaEnviada,
+          registrosFiltrados,
+          rangoEjercicios,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.limiteAlcanzado) setLimiteAlcanzado(true);
+        setMensajes((prev) => [...prev, { rol: "ia", contenido: data.error }]);
+        return;
+      }
+
+      setMensajes((prev) => [
+        ...prev,
+        { rol: "usuario", contenido: preguntaEnviada || "Análisis fiscal del rango de ejercicios seleccionado" },
+        { rol: "ia", contenido: data.respuesta },
+      ]);
+      setRestantes(data.restantes);
+      setUsadas((prev) => prev + 1);
+      if (data.restantes <= 0) setLimiteAlcanzado(true);
+      setPregunta("");
+    } catch (err) {
+      console.error("Error al consultar al especialista fiscal:", err);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <section className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col gap-3">
+      <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+        <h3 className="text-xs font-black tracking-wider uppercase text-[#0B3A6E] flex items-center gap-1.5">
+          ⚖️ Especialista en Fiscalidad IA
+        </h3>
+        {!cargandoInicial && (
+          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+            limiteAlcanzado ? "bg-rose-100 text-rose-700" : "bg-[#0B3A6E]/10 text-[#0B3A6E]"
+          }`}>
+            {usadas}/{limite} preguntas hoy
+          </span>
+        )}
+      </div>
+
+      <button
+        onClick={() => enviarConsulta()}
+        disabled={cargando || limiteAlcanzado || cargandoInicial}
+        className="bg-[#0B3A6E] hover:bg-[#11498a] text-white text-[11px] font-black uppercase tracking-wider rounded-xl py-2 disabled:opacity-50"
+      >
+        {cargando ? "Analizando..." : "Analizar mi situación fiscal"}
+      </button>
+
+      <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+        {mensajes.map((m, i) => (
+          <div key={i} className={`rounded-xl p-2.5 text-[11px] leading-relaxed ${
+            m.rol === "ia" ? "bg-white border border-slate-200 text-slate-700" : "bg-[#0B3A6E]/5 text-slate-700 ml-6"
+          }`}>
+            {m.contenido}
+          </div>
+        ))}
+      </div>
+
+      {limiteAlcanzado ? (
+        <p className="text-[10px] text-rose-600 font-bold text-center py-1">
+          Has alcanzado el límite de {limite} consultas diarias al especialista fiscal. Vuelve a intentarlo mañana.
+        </p>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={pregunta}
+            onChange={(e) => setPregunta(e.target.value)}
+            placeholder="Pregunta algo sobre tu fiscalidad..."
+            className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] focus:outline-none focus:border-[#0B3A6E]"
+          />
+          <button
+            onClick={() => enviarConsulta(pregunta)}
+            disabled={cargando || !pregunta.trim() || cargandoInicial}
+            className="bg-[#1FA187] text-white px-4 rounded-xl text-[11px] font-black uppercase disabled:opacity-50"
+          >
+            Enviar
+          </button>
+        </div>
+      )}
+    </section>
   );
 }

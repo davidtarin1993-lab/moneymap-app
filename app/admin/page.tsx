@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 import {
   UserPlus,
   Users,
@@ -13,6 +14,9 @@ import {
   Ban,
   RotateCcw,
   BellRing,
+  MessageCircle,
+  FileSpreadsheet,
+  MapPinned
 } from "lucide-react";
 
 interface PerfilCliente {
@@ -23,6 +27,9 @@ interface PerfilCliente {
   last_sign_in_at: string | null;
   fecha_renovacion: string | null;
   suspendido: boolean;
+  ultimaInteraccionMovimientos: string | null;
+  ultimaInteraccionFiscal: string | null;
+  tieneRuta: boolean;
 }
 
 function formatearFecha(fecha: string | null): string {
@@ -419,15 +426,37 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
-        >
-          <LogOut size={13} />
-          Salir
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/rutas"
+            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-[#0B3A6E] hover:bg-slate-50"
+          >
+            <MapPinned size={13} />
+            Rutas
+          </Link>
+          <Link
+            href="/admin/chat"
+            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-[#0B3A6E] hover:bg-slate-50"
+          >
+            <MessageCircle size={13} />
+            Chat Clientes
+          </Link>
+          <Link
+            href="/admin/extractos"
+            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-[#0B3A6E] hover:bg-slate-50"
+          >
+            <FileSpreadsheet size={13} />
+            Extractos
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+          >
+            <LogOut size={13} />
+            Salir
+          </button>
+        </div>
       </header>
-
       {mensaje && (
         <div
           className={`mb-4 rounded-xl p-3 text-xs font-bold ${
@@ -555,6 +584,9 @@ export default function AdminDashboardPage() {
                   <th className="py-2 px-2">Cliente</th>
                   <th className="py-2 px-2">Alta</th>
                   <th className="py-2 px-2">Última conexión</th>
+                  <th className="py-2 px-2">Últ. Movimientos</th>
+                  <th className="py-2 px-2">Últ. Fiscalidad</th>
+                  <th className="py-2 px-2">Ruta</th>
                   <th className="py-2 px-2">Renovación</th>
                   <th className="py-2 px-2">Estado</th>
                   <th className="py-2 px-2 text-right">Acciones</th>
@@ -563,7 +595,7 @@ export default function AdminDashboardPage() {
               <tbody>
                 {clientesFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-[11px] text-slate-400 italic text-center py-6">
+                    <td colSpan={9} className="text-[11px] text-slate-400 italic text-center py-6">
                       No hay clientes registrados o que coincidan.
                     </td>
                   </tr>
@@ -599,7 +631,29 @@ export default function AdminDashboardPage() {
                         <td className="py-2.5 px-2 text-[11px] font-bold text-slate-600 whitespace-nowrap">
                           {formatearFecha(cli.last_sign_in_at)}
                         </td>
+                        <td className="py-2.5 px-2 text-[11px] font-bold text-slate-600 whitespace-nowrap">
+                          {formatearFecha(cli.last_sign_in_at)}
+                        </td>
 
+                        <td className="py-2.5 px-2 text-[11px] font-bold text-slate-600 whitespace-nowrap">
+                          {formatearFecha(cli.ultimaInteraccionMovimientos)}
+                        </td>
+
+                        <td className="py-2.5 px-2 text-[11px] font-bold text-slate-600 whitespace-nowrap">
+                          {formatearFecha(cli.ultimaInteraccionFiscal)}
+                        </td>
+
+                        <td className="py-2.5 px-2 whitespace-nowrap">
+                          <span
+                            className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${
+                              cli.tieneRuta
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-slate-100 text-slate-500"
+                            }`}
+                          >
+                            {cli.tieneRuta ? "Sí" : "No"}
+                          </span>
+                        </td>
                         <td className="py-2.5 px-2 whitespace-nowrap">
                           <input
                             type="date"

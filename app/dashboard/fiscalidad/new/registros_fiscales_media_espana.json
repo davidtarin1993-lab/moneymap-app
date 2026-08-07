@@ -1,0 +1,422 @@
+[
+  {
+    "ejercicio": "2021",
+    "concepto": "Ingresos trabajo",
+    "ingresoBruto": 25800,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos trabajo"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Retenciones trabajo",
+    "ingresoBruto": 0.0,
+    "retencionIRPF": 3225.0,
+    "subcategoria": "Retenciones trabajo"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Ingresos capital mobiliario",
+    "ingresoBruto": 280,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos capital mobiliario"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Ingresos inmobiliarios netos",
+    "ingresoBruto": 110,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos inmobiliarios netos"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Ganancias patrimoniales",
+    "ingresoBruto": 150,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ganancias patrimoniales"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Base imponible general",
+    "ingresoBruto": 23200,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Base imponible general"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Base imponible ahorro",
+    "ingresoBruto": 430,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Base imponible ahorro"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Cuota íntegra estatal",
+    "ingresoBruto": 1682.0,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota íntegra estatal"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Cuota íntegra autonómica",
+    "ingresoBruto": 1682.0,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota íntegra autonómica"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Cuota líquida total",
+    "ingresoBruto": 3364.0,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota líquida total"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Retenciones totales",
+    "ingresoBruto": 0.0,
+    "retencionIRPF": 3278.2,
+    "subcategoria": "Retenciones totales"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Resultado declaración",
+    "ingresoBruto": 85.8,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Resultado declaración"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Aportaciones pensiones",
+    "ingresoBruto": 600,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Aportaciones pensiones"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Ingresos totales",
+    "ingresoBruto": 26340,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos totales"
+  },
+  {
+    "ejercicio": "2021",
+    "concepto": "Margen fiscal sobre ingresos",
+    "ingresoBruto": 22976.0,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Margen fiscal sobre ingresos"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Ingresos trabajo",
+    "ingresoBruto": 26600,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos trabajo"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Retenciones trabajo",
+    "ingresoBruto": 0.0,
+    "retencionIRPF": 3404.8,
+    "subcategoria": "Retenciones trabajo"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Ingresos capital mobiliario",
+    "ingresoBruto": 310,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos capital mobiliario"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Ingresos inmobiliarios netos",
+    "ingresoBruto": 115,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos inmobiliarios netos"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Ganancias patrimoniales",
+    "ingresoBruto": 180,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ganancias patrimoniales"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Base imponible general",
+    "ingresoBruto": 23980,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Base imponible general"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Base imponible ahorro",
+    "ingresoBruto": 490,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Base imponible ahorro"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Cuota íntegra estatal",
+    "ingresoBruto": 1738.55,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota íntegra estatal"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Cuota íntegra autonómica",
+    "ingresoBruto": 1738.55,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota íntegra autonómica"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Cuota líquida total",
+    "ingresoBruto": 3477.1,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota líquida total"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Retenciones totales",
+    "ingresoBruto": 0.0,
+    "retencionIRPF": 3463.7,
+    "subcategoria": "Retenciones totales"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Resultado declaración",
+    "ingresoBruto": 13.4,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Resultado declaración"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Aportaciones pensiones",
+    "ingresoBruto": 620,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Aportaciones pensiones"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Ingresos totales",
+    "ingresoBruto": 27205,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos totales"
+  },
+  {
+    "ejercicio": "2022",
+    "concepto": "Margen fiscal sobre ingresos",
+    "ingresoBruto": 23727.9,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Margen fiscal sobre ingresos"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Ingresos trabajo",
+    "ingresoBruto": 27900,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos trabajo"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Retenciones trabajo",
+    "ingresoBruto": 0.0,
+    "retencionIRPF": 3710.7,
+    "subcategoria": "Retenciones trabajo"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Ingresos capital mobiliario",
+    "ingresoBruto": 360,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos capital mobiliario"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Ingresos inmobiliarios netos",
+    "ingresoBruto": 120,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos inmobiliarios netos"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Ganancias patrimoniales",
+    "ingresoBruto": 210,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ganancias patrimoniales"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Base imponible general",
+    "ingresoBruto": 25250,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Base imponible general"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Base imponible ahorro",
+    "ingresoBruto": 570,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Base imponible ahorro"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Cuota íntegra estatal",
+    "ingresoBruto": 1830.62,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota íntegra estatal"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Cuota íntegra autonómica",
+    "ingresoBruto": 1830.62,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota íntegra autonómica"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Cuota líquida total",
+    "ingresoBruto": 3661.25,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota líquida total"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Retenciones totales",
+    "ingresoBruto": 0.0,
+    "retencionIRPF": 3779.1,
+    "subcategoria": "Retenciones totales"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Resultado declaración",
+    "ingresoBruto": -117.85,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Resultado declaración"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Aportaciones pensiones",
+    "ingresoBruto": 650,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Aportaciones pensiones"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Ingresos totales",
+    "ingresoBruto": 28590,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos totales"
+  },
+  {
+    "ejercicio": "2023",
+    "concepto": "Margen fiscal sobre ingresos",
+    "ingresoBruto": 24928.75,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Margen fiscal sobre ingresos"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Ingresos trabajo",
+    "ingresoBruto": 29100,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos trabajo"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Retenciones trabajo",
+    "ingresoBruto": 0.0,
+    "retencionIRPF": 4015.8,
+    "subcategoria": "Retenciones trabajo"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Ingresos capital mobiliario",
+    "ingresoBruto": 400,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos capital mobiliario"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Ingresos inmobiliarios netos",
+    "ingresoBruto": 125,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos inmobiliarios netos"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Ganancias patrimoniales",
+    "ingresoBruto": 230,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ganancias patrimoniales"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Base imponible general",
+    "ingresoBruto": 26400,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Base imponible general"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Base imponible ahorro",
+    "ingresoBruto": 630,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Base imponible ahorro"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Cuota íntegra estatal",
+    "ingresoBruto": 1914.0,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota íntegra estatal"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Cuota íntegra autonómica",
+    "ingresoBruto": 1914.0,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota íntegra autonómica"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Cuota líquida total",
+    "ingresoBruto": 3828.0,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Cuota líquida total"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Retenciones totales",
+    "ingresoBruto": 0.0,
+    "retencionIRPF": 4091.8,
+    "subcategoria": "Retenciones totales"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Resultado declaración",
+    "ingresoBruto": -263.8,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Resultado declaración"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Aportaciones pensiones",
+    "ingresoBruto": 700,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Aportaciones pensiones"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Ingresos totales",
+    "ingresoBruto": 29855,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Ingresos totales"
+  },
+  {
+    "ejercicio": "2024",
+    "concepto": "Margen fiscal sobre ingresos",
+    "ingresoBruto": 26027.0,
+    "retencionIRPF": 0.0,
+    "subcategoria": "Margen fiscal sobre ingresos"
+  }
+]

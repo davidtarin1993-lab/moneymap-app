@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogIn, Mail, Lock, ShieldAlert, KeyRound, CheckCircle, X } from "lucide-react";
+import { LogIn, Mail, Lock, ShieldAlert, KeyRound, CheckCircle, X , Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [cargando, setCargando] = useState<boolean>(false);
+const [mostrarPassword, setMostrarPassword] = useState<boolean>(false);
 
   // Estados para el modal de "¿Olvidaste tu contraseña?"
   const [mostrarRecuperar, setMostrarRecuperar] = useState<boolean>(false);
@@ -63,7 +65,13 @@ export default function LoginPage() {
           localStorage.removeItem("moneymap_remembered_email");
         }
       }
-
+      // Registrar la conexión (no bloqueante: si falla, no rompe el login)
+      if (loginData.session?.access_token) {
+        fetch("/api/auth/registrar-conexion", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${loginData.session.access_token}` },
+        }).catch((err) => console.error("No se pudo registrar la conexión:", err));
+      }
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("id, email, nombre, role")
@@ -180,7 +188,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="space-y-1">
+<div className="space-y-1">
             <label className="block text-[8.5px] text-slate-500 font-bold uppercase tracking-wider pl-1">
               Contraseña
             </label>
@@ -192,13 +200,22 @@ export default function LoginPage() {
               />
 
               <input
-                type="password"
+                type={mostrarPassword ? "text" : "password"}
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:border-[#0B3A6E] font-medium"
+                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl pl-9 pr-9 py-1.5 text-xs focus:outline-none focus:border-[#0B3A6E] font-medium"
               />
+
+              <button
+                type="button"
+                onClick={() => setMostrarPassword(!mostrarPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                tabIndex={-1}
+              >
+                {mostrarPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+              </button>
             </div>
           </div>
 

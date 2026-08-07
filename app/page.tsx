@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { User, ArrowRight, CheckCircle2, CalendarDays, Info, ShieldCheck, X, Undo2, Send, Calendar, Clock, MessageSquare, Mail } from 'lucide-react';
+import { User, ArrowRight, CheckCircle2, CalendarDays, Info, ShieldCheck, X, Undo2, Send, Calendar, Clock, MessageSquare, Mail, Sparkles } from 'lucide-react';
+import TourInteractivo from "@/components/TourInteractivo";
 
 export default function LandingPage() {
   const [emailLead, setEmailLead] = useState('');
@@ -11,6 +12,7 @@ export default function LandingPage() {
   // Estados para la tarjeta interactiva del Experto
   const [mostrarInformacion, setMostrarInformacion] = useState(false);
   const [mostrarModalCita, setMostrarModalCita] = useState(false);
+  const [mostrarTour, setMostrarTour] = useState(false);
 
   // Campos del formulario de reserva
   const [fechaCita, setFechaCita] = useState('');
@@ -147,7 +149,17 @@ export default function LandingPage() {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1FA187]">Suscripción</h3>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#1FA187]">Suscripción</h3>
+                <button
+                  type="button"
+                  onClick={() => setMostrarTour(true)}
+                  className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#0B3A6E] bg-[#0B3A6E]/5 border border-[#0B3A6E]/10 px-3 py-1.5 rounded-full hover:bg-[#0B3A6E]/10 transition-all"
+                >
+                  <Sparkles size={11} />
+                  ¿Sabes cómo funciona?
+                </button>
+              </div>
 
               {/* Selector Mensual / Anual */}
               <div className="inline-flex bg-white border border-slate-200 rounded-xl p-1 gap-1">
@@ -486,7 +498,25 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* 4. PIE DE PÁGINA */}
+      {/* 4. MODAL FLOTANTE: TOUR INTERACTIVO */}
+      {mostrarTour && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-2xl rounded-3xl border border-slate-200 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setMostrarTour(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-all z-10"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="p-6 md:p-8">
+              <TourInteractivo />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. PIE DE PÁGINA */}
       <footer className="w-full text-center py-6 border-t border-slate-100 text-slate-400 text-[10px] font-bold tracking-wide uppercase bg-white z-10 relative">
         © {new Date().getFullYear()} MoneyMap. Todos los derechos reservados.
       </footer>
