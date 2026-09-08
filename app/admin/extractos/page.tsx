@@ -10,8 +10,9 @@ import {
   Download,
   CheckCircle2,
   AlertTriangle,
-  HelpCircle,
+  HelpCircle,ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
 
 interface ClienteResumen {
   clienteId: string;
@@ -208,6 +209,12 @@ export default function AdminExtractosPage() {
   return (
     <div className="w-full min-h-screen bg-white text-slate-800 px-4 py-6 font-sans pb-32 antialiased">
       <header className="mb-5 border-b border-slate-100 pb-3">
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:text-[#0B3A6E] mb-2"
+        >
+          <ArrowLeft size={12} /> Volver al panel
+        </Link>
         <h1 className="text-xl font-black text-[#0B3A6E] tracking-tight uppercase flex items-center gap-2">
           <FileSpreadsheet size={20} />
           Extractos de Clientes

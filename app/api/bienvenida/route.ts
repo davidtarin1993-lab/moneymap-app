@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     });
 
     const { data, error } = await resend.emails.send({
-      from: 'MoneyMap <onboarding@resend.dev>',
+      from: 'MoneyMap <hola@moneymap.es>',
       to: [email],
       subject: '¡Bienvenido a MoneyMap! No te vas a arrepentir 🎉',
       html: plantillaBienvenida({ nombre, apellido, fechaNacimiento }),

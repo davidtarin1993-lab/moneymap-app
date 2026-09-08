@@ -9,110 +9,122 @@ import path from "path";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
-  const { user, error } = await getVerifiedAdmin(request);
+  try {
+    const { user, error } = await getVerifiedAdmin(request);
 
-  if (error || !user) {
-    return NextResponse.json({ error }, { status: 401 });
-  }
+    if (error || !user) {
+      return NextResponse.json({ error }, { status: 401 });
+    }
 
-  const body = await request.json();
+    const body = await request.json();
 
-  const nombre = body.nombre?.trim();
-  const email = body.email?.trim();
+    const nombre = body.nombre?.trim();
+    const email = body.email?.trim();
+    const fechaRenovacion = body.fechaRenovacion || null;
+    const role = body.role === "admin" ? "admin" : "user";
 
-  if (!nombre || !email) {
-    return NextResponse.json(
-      { error: "Nombre y email son obligatorios." },
-      { status: 400 }
-    );
-  }
+    if (!nombre || !email) {
+      return NextResponse.json(
+        { error: "Nombre y email son obligatorios." },
+        { status: 400 }
+      );
+    }
 
-  // Contraseña temporal aleatoria: el cliente nunca la ve, la sustituye por la suya via email
-  const passwordTemporal = crypto.randomBytes(16).toString("hex");
+    const passwordTemporal = crypto.randomBytes(16).toString("hex");
 
-  const { data: createdUser, error: createUserError } =
-    await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: passwordTemporal,
-      email_confirm: true,
-      user_metadata: {
-        nombre,
-        role: "user",
-      },
-    });
+    const { data: createdUser, error: createUserError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: passwordTemporal,
+        email_confirm: true,
+        user_metadata: { nombre, role },
+      });
 
-  if (createUserError || !createdUser.user) {
-    return NextResponse.json(
-      { error: createUserError?.message || "No se ha podido crear el usuario." },
-      { status: 500 }
-    );
-  }
+    if (createUserError || !createdUser.user) {
+      console.error("Error al crear usuario en Supabase Auth:", createUserError);
+      return NextResponse.json(
+        { error: createUserError?.message || "No se ha podido crear el usuario." },
+        { status: 500 }
+      );
+    }
 
-  const { error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .upsert(
-      {
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .upsert(
+        {
+          id: createdUser.user.id,
+          email,
+          nombre,
+          role,
+          fecha_renovacion: fechaRenovacion,
+        },
+        { onConflict: "id" }
+      );
+
+    if (profileError) {
+      console.error("Error al guardar el perfil:", profileError);
+      await supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
+      return NextResponse.json({ error: profileError.message }, { status: 500 });
+    }
+
+    const { data: linkData, error: linkError } =
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: {
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/restablecer-contrasena`,
+        },
+      });
+
+    let avisoEmail: string | null = null;
+
+    if (linkError || !linkData?.properties?.action_link) {
+      console.error("Error al generar el enlace de acceso:", linkError);
+      avisoEmail = "El cliente se creó correctamente, pero no se pudo generar el enlace de acceso.";
+    } else {
+      try {
+        const logoPath = path.join(process.cwd(), "public", "Multimedia", "portada.png");
+        const logoBuffer = fs.readFileSync(logoPath);
+
+        const { error: sendError } = await resend.emails.send({
+          from: "MoneyMap <hola@moneymap.es>",
+          replyTo: "hola.moneymap@gmail.com",
+          to: [email],
+          subject: "Tu acceso a MoneyMap ya está activo",
+          html: plantillaAcceso(nombre, linkData.properties.action_link),
+          attachments: [
+            { filename: "logo.png", content: logoBuffer.toString("base64"), contentId: "logo-moneymap" },
+          ],
+        });
+
+        if (sendError) {
+          console.error("Error al enviar email de acceso (Resend):", sendError);
+          avisoEmail = "El cliente se creó correctamente, pero el email de acceso no se pudo enviar.";
+        }
+      } catch (errEmail: any) {
+        console.error("Excepción al preparar/enviar el email de acceso:", errEmail?.message || errEmail);
+        avisoEmail = "El cliente se creó correctamente, pero el email de acceso no se pudo enviar.";
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      avisoEmail,
+      cliente: {
         id: createdUser.user.id,
         email,
         nombre,
-        role: "user",
-      },
-      { onConflict: "id" }
-    );
-
-  if (profileError) {
-    await supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
-    return NextResponse.json({ error: profileError.message }, { status: 500 });
-  }
-
-  // Generamos el enlace para que el cliente establezca su propia contraseña
-  const { data: linkData, error: linkError } =
-    await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/restablecer-contrasena`,
+        role,
+        fecha_renovacion: fechaRenovacion,
       },
     });
-
-  let avisoEmail: string | null = null;
-
-  if (linkError || !linkData?.properties?.action_link) {
-    avisoEmail = "El cliente se creó correctamente, pero no se pudo generar el enlace de acceso.";
-  } else {
-    try {
-      const logoPath = path.join(process.cwd(), "public", "Multimedia", "portada.png");
-      const logoBuffer = fs.readFileSync(logoPath);
-
-      const { error: sendError } = await resend.emails.send({
-        from: "MoneyMap <onboarding@resend.dev>",
-        to: [email],
-        subject: "Tu acceso a MoneyMap ya está activo",
-        html: plantillaAcceso(nombre, linkData.properties.action_link),
-        attachments: [
-          { filename: "logo.png", content: logoBuffer.toString("base64"), contentId: "logo-moneymap" },
-        ],
-      });
-      console.log('DEBUG - sendError:', JSON.stringify(sendError));
-
-      if (sendError) {
-        avisoEmail = "El cliente se creó correctamente, pero el email de acceso no se pudo enviar.";
-      }
-    } catch {
-      avisoEmail = "El cliente se creó correctamente, pero el email de acceso no se pudo enviar.";
-    }
+  } catch (errGeneral: any) {
+    console.error("Error inesperado en /api/admin/create-client:", errGeneral?.message || errGeneral, errGeneral?.stack);
+    return NextResponse.json(
+      { error: errGeneral?.message || "Error interno inesperado al dar de alta el cliente." },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({
-    ok: true,
-    avisoEmail,
-    cliente: {
-      id: createdUser.user.id,
-      email,
-      nombre,
-      role: "user",
-    },
-  });
 }
 
 function plantillaAcceso(nombre: string, enlace: string) {

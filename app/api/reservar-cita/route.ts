@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     console.log('DEBUG - api key presente:', !!process.env.RESEND_API_KEY, process.env.RESEND_API_KEY?.slice(0, 6));
 
     const { data, error } = await resend.emails.send({
-      from: 'MoneyMap <onboarding@resend.dev>', // cámbialo por tu dominio verificado en Resend cuando lo tengas
+      from: 'MoneyMap <hola@moneymap.es>', // cámbialo por tu dominio verificado en Resend cuando lo tengas
       to: ['davidtarin1993@gmail.com'],       // <-- pon aquí el email donde quieres recibir los avisos
       replyTo: email,
       subject: `Nueva solicitud de cita — ${fecha} a las ${hora}`,

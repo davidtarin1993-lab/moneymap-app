@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Wallet, BarChart3, LineChart, PieChart } from 'lucide-react';
+import { Wallet, BarChart3, LineChart, PieChart, Bot, Filter, ChevronDown } from 'lucide-react';
 import { supabase } from "@/lib/supabase";
+import { useRegistrarVisita } from "@/lib/useRegistrarVisita";
 
 interface Movimiento {
   fecha: string;
@@ -19,14 +20,17 @@ interface DashboardProps {
 }
 
 export default function MoneyMapClientDashboard({ datosExcel }: DashboardProps) {
+  useRegistrarVisita("movimientos");
+
   const [mesInicio, setMesInicio] = useState<string>('01');
   const [anioInicio, setAnioInicio] = useState<string>('');
   const [mesFin, setMesFin] = useState<string>('12');
   const [anioFin, setAnioFin] = useState<string>('');
-
+  const [opacidadBotonIA, setOpacidadBotonIA] = useState(1);
   const [modalAbierta, setModalAbierta] = useState<boolean>(false);
   const [modalTitulo, setModalTitulo] = useState<string>('');
   const [modalDatos, setModalDatos] = useState<{ nombre: string; total: number; porcentaje: number }[]>([]);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   const NOMBRES_MESES = [
     { valor: "01", nombre: "Ene" },
@@ -55,6 +59,27 @@ export default function MoneyMapClientDashboard({ datosExcel }: DashboardProps) 
       naturaleza: mov.naturaleza || 'variable'
     }));
   }, [datosExcel]);
+
+  useEffect(() => {
+    const calcularOpacidad = () => {
+      const distanciaHastaElFinal =
+        document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+
+      const umbralDifuminado = 250; // px antes del final donde empieza a desvanecerse
+
+      if (distanciaHastaElFinal <= 0) {
+        setOpacidadBotonIA(0);
+      } else if (distanciaHastaElFinal < umbralDifuminado) {
+        setOpacidadBotonIA(distanciaHastaElFinal / umbralDifuminado);
+      } else {
+        setOpacidadBotonIA(1);
+      }
+    };
+
+    calcularOpacidad();
+    window.addEventListener("scroll", calcularOpacidad);
+    return () => window.removeEventListener("scroll", calcularOpacidad);
+  }, []);
 
   const listaAnios = useMemo(() => {
     const anios = datosNormalizados.map(m => m.fecha.split('-')[0]).filter(Boolean);
@@ -219,8 +244,7 @@ export default function MoneyMapClientDashboard({ datosExcel }: DashboardProps) 
     return { pathIng, pathGast, maxGlobal };
   }, [analiticaGlobal.puntosHistoricos]);
 
-  const selectStyle = "w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-1.5 py-1 text-[11px] h-7 focus:outline-none appearance-none text-center font-semibold";
-
+  const selectStyle = "w-full bg-white border border-[#0B3A6E]/20 text-[#0B3A6E] rounded-xl px-1.5 py-1 text-[11px] h-7 focus:outline-none appearance-none text-center font-black";
   const rangoFechas = `${mesInicio}/${anioInicio} - ${mesFin}/${anioFin}`;
 
   return (
@@ -228,75 +252,97 @@ export default function MoneyMapClientDashboard({ datosExcel }: DashboardProps) 
 
       {/* CABECERA */}
       <header className="mb-4 border-b border-slate-100 pb-2.5">
-        <p className="text-slate-500 text-xs font-medium leading-relaxed">
-          Auditoría cruzada automatizada de flujos de caja, costes y tendencias en tiempo real.
+        <h1 className="text-lg font-black text-[#0B3A6E] tracking-tight">Movimientos Bancarios</h1>
+        <p className="text-slate-500 text-xs font-medium leading-relaxed mt-1">
+          Auditoría automatizada de tus ingresos y gastos, al momento.
         </p>
       </header>
 
       {/* FILTROS */}
-      <section className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-3">
-        <div className="flex flex-col gap-1.5">
+      <section className="bg-white border border-[#0B3A6E]/15 rounded-2xl mb-3 overflow-hidden shadow-sm">
+        <button
+          onClick={() => setMostrarFiltros(!mostrarFiltros)}
+          className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[#0B3A6E]"
+        >
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-500 font-bold w-10 uppercase">Desde:</span>
-            <div className="flex-1 flex gap-1">
-              <select value={mesInicio} onChange={(e) => setMesInicio(e.target.value)} className={selectStyle}>
-                {NOMBRES_MESES.map(m => <option key={m.valor} value={m.valor}>{m.nombre}</option>)}
-              </select>
-              <select value={anioInicio} onChange={(e) => setAnioInicio(e.target.value)} className={selectStyle}>
-                {listaAnios.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
+            <Filter size={13} className="text-[#1FA187]" />
+            <span className="text-[10.5px] font-black uppercase tracking-wider text-white">Periodo Analizado</span>
+          </div>
+          <ChevronDown
+            size={15}
+            className={`text-white/70 transition-transform duration-200 ${mostrarFiltros ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {mostrarFiltros && (
+          <div className="p-3 bg-[#0B3A6E]/5">
+            <div className="flex flex-row gap-2.5 w-full">
+              <div className="flex-1 min-w-0">
+                <p className="text-[#0B3A6E] text-[8.5px] font-black uppercase tracking-wider mb-1">Desde</p>
+                <div className="flex gap-1">
+                  <select value={mesInicio} onChange={(e) => setMesInicio(e.target.value)} className={selectStyle}>
+                    {NOMBRES_MESES.map(m => <option key={m.valor} value={m.valor}>{m.nombre}</option>)}
+                  </select>
+                  <select value={anioInicio} onChange={(e) => setAnioInicio(e.target.value)} className={selectStyle}>
+                    {listaAnios.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-[#0B3A6E] text-[8.5px] font-black uppercase tracking-wider mb-1">Hasta</p>
+                <div className="flex gap-1">
+                  <select value={mesFin} onChange={(e) => setMesFin(e.target.value)} className={selectStyle}>
+                    {NOMBRES_MESES.map(m => <option key={m.valor} value={m.valor}>{m.nombre}</option>)}
+                  </select>
+                  <select value={anioFin} onChange={(e) => setAnioFin(e.target.value)} className={selectStyle}>
+                    {listaAnios.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-500 font-bold w-10 uppercase">Hasta:</span>
-            <div className="flex-1 flex gap-1">
-              <select value={mesFin} onChange={(e) => setMesFin(e.target.value)} className={selectStyle}>
-                {NOMBRES_MESES.map(m => <option key={m.valor} value={m.valor}>{m.nombre}</option>)}
-              </select>
-              <select value={anioFin} onChange={(e) => setAnioFin(e.target.value)} className={selectStyle}>
-                {listaAnios.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
+        )}
       </section>
 
       {/* KPIs GENERALES */}
-      <div className="flex flex-row gap-1.5 mb-3 w-full">
+      <section className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-3">
+        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mb-2">Resumen del período</p>
+        <div className="flex flex-row gap-1.5 w-full">
 
-        <div className="flex-1 bg-emerald-50 border border-emerald-200 p-1.5 rounded-xl min-w-0">
-          <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight">Ingresos</p>
-          <div className="text-xs font-black text-emerald-700 mt-0.5 truncate">
-            +{analiticaGlobal.ingresosTotales.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€
+          <div className="flex-1 bg-emerald-50 border border-emerald-200 p-1.5 rounded-xl min-w-0">
+            <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight">Ingresos</p>
+            <div className="text-xs font-black text-emerald-700 mt-0.5 truncate">
+              +{analiticaGlobal.ingresosTotales.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€
+            </div>
           </div>
+
+          <div className="flex-1 bg-rose-50 border border-rose-200 p-1.5 rounded-xl min-w-0">
+            <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight">Gastos</p>
+            <div className="text-xs font-black text-rose-600 mt-0.5 truncate">
+              -{analiticaGlobal.gastosTotales.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€
+            </div>
+          </div>
+
+          <div className={`flex-1 p-1.5 rounded-xl min-w-0 border ${analiticaGlobal.ahorroNeto >= 0 ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+            <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight">Ahorro</p>
+            <div className="text-xs font-black mt-0.5 truncate">
+              {analiticaGlobal.ahorroNeto >= 0 ? '+' : ''}{analiticaGlobal.ahorroNeto.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€
+            </div>
+          </div>
+
+          <div className="flex-[1.5] p-1 border rounded-xl min-w-0 flex items-center gap-1 bg-white border-slate-200">
+            <div className="p-1 bg-[#0B3A6E] rounded-md shrink-0">
+              <Wallet className="w-3 h-3 text-[#1FA187]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-slate-500 text-[7px] font-medium uppercase tracking-tight leading-none">Tasa de ahorro %</p>
+              <h4 className="text-[11px] font-black text-slate-900 mt-0.5 truncate">{analiticaGlobal.tasaAhorro.toFixed(1)}%</h4>
+            </div>
+          </div>
+
         </div>
-
-        <div className="flex-1 bg-rose-50 border border-rose-200 p-1.5 rounded-xl min-w-0">
-          <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight">Gastos</p>
-          <div className="text-xs font-black text-rose-600 mt-0.5 truncate">
-            -{analiticaGlobal.gastosTotales.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€
-          </div>
-        </div>
-
-        <div className={`flex-1 p-1.5 rounded-xl min-w-0 border ${analiticaGlobal.ahorroNeto >= 0 ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
-          <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight">Ahorro</p>
-          <div className="text-xs font-black mt-0.5 truncate">
-            {analiticaGlobal.ahorroNeto >= 0 ? '+' : ''}{analiticaGlobal.ahorroNeto.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€
-          </div>
-        </div>
-
-        <div className="flex-[1.5] p-1 border rounded-xl min-w-0 flex items-center gap-1 bg-slate-50 border-slate-200">
-          <div className="p-1 bg-[#0B3A6E] rounded-md shrink-0">
-            <Wallet className="w-3 h-3 text-[#1FA187]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-slate-500 text-[7px] font-medium uppercase tracking-tight leading-none">Tasa de ahorro %</p>
-            <h4 className="text-[11px] font-black text-slate-900 mt-0.5 truncate">{analiticaGlobal.tasaAhorro.toFixed(1)}%</h4>
-          </div>
-        </div>
-
-      </div>
-
+      </section>
       {/* MÓDULO 1: AUDITORÍA DE INGRESOS */}
       <section className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col gap-3 mb-3">
         <div className="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -465,7 +511,9 @@ export default function MoneyMapClientDashboard({ datosExcel }: DashboardProps) 
       </section>
 
       {/* ASISTENTE DE ANÁLISIS IA */}
-      <AnalisisIASection movimientosFiltrados={movimientosFiltrados} rangoFechas={rangoFechas} />
+      <div id="asistente-ia-movimientos">
+        <AnalisisIASection movimientosFiltrados={movimientosFiltrados} rangoFechas={rangoFechas} />
+      </div>
 
       {/* VENTANA MODAL FLOTANTE */}
       {modalAbierta && (
@@ -508,7 +556,15 @@ export default function MoneyMapClientDashboard({ datosExcel }: DashboardProps) 
           </div>
         </div>
       )}
-
+      {/* BOTÓN FLOTANTE: ACCESO RÁPIDO A LA IA */}
+      <button
+        onClick={() => document.getElementById("asistente-ia-movimientos")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        style={{ opacity: opacidadBotonIA, pointerEvents: opacidadBotonIA < 0.05 ? "none" : "auto" }}
+        className="fixed top-1/2 right-4 -translate-y-1/2 z-40 bg-[#0B3A6E] hover:bg-[#11498a] text-white p-3.5 rounded-full shadow-lg transition-opacity duration-300 flex items-center justify-center"
+        aria-label="Preguntar al asistente IA"
+      >
+        <Bot size={20} className="text-[#1FA187]" />
+      </button>
     </div>
   );
 }
@@ -607,14 +663,14 @@ function AnalisisIASection({
   };
 
   return (
-    <section className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col gap-3 mt-3">
-      <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-        <h3 className="text-xs font-black tracking-wider uppercase text-[#0B3A6E] flex items-center gap-1.5">
-          💡 Asistente de Análisis IA
+    <section className="bg-[#0B3A6E] border border-[#0B3A6E] rounded-2xl p-3 flex flex-col gap-3 mt-3 shadow-md">
+      <div className="flex justify-between items-center border-b border-white/15 pb-2">
+        <h3 className="text-xs font-black tracking-wider uppercase text-white flex items-center gap-1.5">
+          <Bot size={14} className="text-[#1FA187]" /> Asistente de Análisis IA
         </h3>
         {!cargandoInicial && (
           <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-            limiteAlcanzado ? "bg-rose-100 text-rose-700" : "bg-[#0B3A6E]/10 text-[#0B3A6E]"
+            limiteAlcanzado ? "bg-rose-500/20 text-rose-200" : "bg-white/10 text-white"
           }`}>
             {usadas}/{limite} preguntas hoy
           </span>
@@ -624,7 +680,7 @@ function AnalisisIASection({
       <button
         onClick={() => enviarConsulta()}
         disabled={cargando || limiteAlcanzado || cargandoInicial}
-        className="bg-[#0B3A6E] hover:bg-[#11498a] text-white text-[11px] font-black uppercase tracking-wider rounded-xl py-2 disabled:opacity-50"
+        className="bg-[#1FA187] hover:bg-[#198771] text-white text-[11px] font-black uppercase tracking-wider rounded-xl py-2 disabled:opacity-50 transition-all"
       >
         {cargando ? "Analizando..." : "Analizar este período"}
       </button>
@@ -632,7 +688,7 @@ function AnalisisIASection({
       <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
         {mensajes.map((m, i) => (
           <div key={i} className={`rounded-xl p-2.5 text-[11px] leading-relaxed ${
-            m.rol === "ia" ? "bg-white border border-slate-200 text-slate-700" : "bg-[#0B3A6E]/5 text-slate-700 ml-6"
+            m.rol === "ia" ? "bg-white text-slate-700" : "bg-white/10 text-white ml-6"
           }`}>
             {m.contenido}
           </div>
@@ -640,7 +696,7 @@ function AnalisisIASection({
       </div>
 
       {limiteAlcanzado ? (
-        <p className="text-[10px] text-rose-600 font-bold text-center py-1">
+        <p className="text-[10px] text-rose-200 font-bold text-center py-1">
           Has alcanzado el límite de {limite} consultas diarias. Vuelve a intentarlo mañana.
         </p>
       ) : (
@@ -650,12 +706,12 @@ function AnalisisIASection({
             value={pregunta}
             onChange={(e) => setPregunta(e.target.value)}
             placeholder="Pregunta algo sobre tus finanzas..."
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] focus:outline-none focus:border-[#0B3A6E]"
+            className="flex-1 rounded-xl border border-white/20 bg-white/10 text-white placeholder:text-white/50 px-3 py-2 text-[11px] focus:outline-none focus:border-white/40"
           />
           <button
             onClick={() => enviarConsulta(pregunta)}
             disabled={cargando || !pregunta.trim() || cargandoInicial}
-            className="bg-[#1FA187] text-white px-4 rounded-xl text-[11px] font-black uppercase disabled:opacity-50"
+            className="bg-[#1FA187] hover:bg-[#198771] text-white px-4 rounded-xl text-[11px] font-black uppercase disabled:opacity-50 transition-all"
           >
             Enviar
           </button>

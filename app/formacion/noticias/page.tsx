@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { noticias } from "./noticiasData"; // <-- CONEXIÓN AUTOMÁTICA
+import { useRegistrarVisita } from "@/lib/useRegistrarVisita";
 
 const categorias = ["Todas", "Mercados", "Fiscalidad", "Autónomos", "Ahorro", "Patrimonio"];
 
 export default function NoticiasPage() {
+  useRegistrarVisita("noticias");
+
   const [busqueda, setBusqueda] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todas");
 

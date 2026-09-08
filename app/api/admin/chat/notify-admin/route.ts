@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     }
 
     await resend.emails.send({
-      from: "MoneyMap <onboarding@resend.dev>",
+      from: "MoneyMap <hola@moneymap.es>",
       to: ADMIN_EMAIL!,
       subject: `Nuevo mensaje de ${clienteNombre || "un cliente"} en el chat`,
       html: `

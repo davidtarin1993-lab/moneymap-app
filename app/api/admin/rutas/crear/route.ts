@@ -60,6 +60,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No se pudo crear la ruta." }, { status: 500 });
     }
 
+    // La ruta ya existe: quitamos la marca de "solicitud pendiente" del cliente
+    await supabaseAdmin
+      .from("profiles")
+      .update({ ruta_solicitada: false })
+      .eq("id", clienteId);
+
+    // Cerramos cualquier solicitud pendiente de este cliente (nueva tabla solicitudes_ruta)
+    await supabaseAdmin
+      .from("solicitudes_ruta")
+      .update({ estado: "completada" })
+      .eq("cliente_id", clienteId)
+      .eq("estado", "pendiente");
+
+    return NextResponse.json({ ok: true });
+    if (insertError) {
+      console.error("Error al insertar ruta:", insertError);
+      return NextResponse.json({ error: "No se pudo crear la ruta." }, { status: 500 });
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Error en /api/admin/rutas/crear:", err);

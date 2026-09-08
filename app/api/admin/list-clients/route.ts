@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getVerifiedAdmin } from "@/lib/serverAuth";
+import { calcularMesesTranscurridos, obtenerNivel } from "@/lib/niveles";
 
 export async function GET(request: NextRequest) {
   const { user, error } = await getVerifiedAdmin(request);
@@ -80,6 +81,8 @@ export async function GET(request: NextRequest) {
     ultimaInteraccionMovimientos: mapaUltimoMovimientos.get(cliente.id) ?? null,
     ultimaInteraccionFiscal: mapaUltimoFiscal.get(cliente.id) ?? null,
     tieneRuta: setConRuta.has(cliente.id),
+    nivel: obtenerNivel(calcularMesesTranscurridos(new Date(cliente.created_at))).indiceActual + 1,
+
   }));
 
   return NextResponse.json({ clientes });

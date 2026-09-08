@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Filter, Wallet, BarChart3, HelpCircle } from 'lucide-react';
+import { Filter, Wallet, BarChart3, HelpCircle, ChevronDown, Bot } from 'lucide-react';
 import { supabase } from "@/lib/supabase";
+import { useRegistrarVisita } from "@/lib/useRegistrarVisita";
+
 
 interface RegistroFiscal {
   ejercicio: string;
@@ -17,9 +19,13 @@ interface FiscalProps {
 }
 
 export default function FiscalidadClientDashboard({ datosExcel }: FiscalProps) {
+  useRegistrarVisita("fiscalidad");
+
   const [anioInicio, setAnioInicio] = useState<string>('');
   const [anioFin, setAnioFin] = useState<string>('');
   const [explicacionActiva, setExplicacionActiva] = useState<string | null>(null);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [opacidadBotonIA, setOpacidadBotonIA] = useState(1);
 
   const datosNormalizados = useMemo<RegistroFiscal[]>(() => {
     if (!datosExcel || !Array.isArray(datosExcel)) return [];
@@ -43,6 +49,27 @@ export default function FiscalidadClientDashboard({ datosExcel }: FiscalProps) {
       setAnioFin(listaAnios[listaAnios.length - 1]);
     }
   }, [listaAnios]);
+
+  useEffect(() => {
+    const calcularOpacidad = () => {
+      const distanciaHastaElFinal =
+        document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+
+      const umbralDifuminado = 250;
+
+      if (distanciaHastaElFinal <= 0) {
+        setOpacidadBotonIA(0);
+      } else if (distanciaHastaElFinal < umbralDifuminado) {
+        setOpacidadBotonIA(distanciaHastaElFinal / umbralDifuminado);
+      } else {
+        setOpacidadBotonIA(1);
+      }
+    };
+
+    calcularOpacidad();
+    window.addEventListener("scroll", calcularOpacidad);
+    return () => window.removeEventListener("scroll", calcularOpacidad);
+  }, []);
 
   const registrosFiltrados = useMemo(() => {
     const desde = Number(anioInicio);
@@ -174,71 +201,89 @@ export default function FiscalidadClientDashboard({ datosExcel }: FiscalProps) {
     };
   }, [datosNormalizados, registrosFiltrados, anioInicio, anioFin, listaAnios]);
 
-  const selectStyle = "w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-1.5 py-1 text-[11px] h-7 focus:outline-none appearance-none text-center font-semibold";
+  const selectStyle = "w-full bg-white border border-[#0B3A6E]/20 text-[#0B3A6E] rounded-xl px-1.5 py-1 text-[11px] h-7 focus:outline-none appearance-none text-center font-black";
   const esAPagar = statsFiscales.resultadoDeclaracion > 0;
   return (
-    /* 🛠️ FONDO CAMBIADO A BLANCO PURE (bg-white) Y TEXTO OSCURO (text-slate-800) */
     <div className="w-full min-h-[100dvh] bg-white text-slate-800 px-3 py-4 font-sans pb-32 antialiased">
       
       {/* CABECERA */}
-      <header className="mb-4 border-b border-slate-100 pb-2">
-        <p className="text-slate-500 text-[11px] font-medium leading-none">
-          Auditoría fiscal automatizada parametrizada con las métricas oficiales del documento.
+      <header className="mb-4 border-b border-slate-100 pb-2.5">
+        <h1 className="text-lg font-black text-[#0B3A6E] tracking-tight">Fiscalidad</h1>
+        <p className="text-slate-500 text-xs font-medium leading-relaxed mt-1">
+          Auditoría fiscal automatizada con las métricas oficiales de tu declaración.
         </p>
       </header>
 
-      {/* FILTROS CON CONTRASTE CLARO */}
-      <section className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-5">
-        <div className="flex items-center gap-1.5 text-xs font-black text-[#0B3A6E] uppercase tracking-wider mb-2">
-          <Filter size={12} /> Período de Campañas Renta
-        </div>
-        <div className="flex flex-row gap-2">
-          <div className="flex-1">
-            <span className="block text-[9px] text-slate-500 font-bold mb-1">Desde Año:</span>
-            <select value={anioInicio} onChange={(e) => setAnioInicio(e.target.value)} className={selectStyle}>
-              {listaAnios.map(a => <option key={`start-fisc-${a}`} value={a}>{a}</option>)}
-            </select>
+      {/* FILTROS */}
+      <section className="bg-white border border-[#0B3A6E]/15 rounded-2xl mb-5 overflow-hidden shadow-sm">
+        <button
+          onClick={() => setMostrarFiltros(!mostrarFiltros)}
+          className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[#0B3A6E]"
+        >
+          <div className="flex items-center gap-2">
+            <Filter size={13} className="text-[#1FA187]" />
+            <span className="text-[10.5px] font-black uppercase tracking-wider text-white">Período de Campañas Renta</span>
           </div>
-          <div className="flex-1">
-            <span className="block text-[9px] text-slate-500 font-bold mb-1">Hasta Año:</span>
-            <select value={anioFin} onChange={(e) => setAnioFin(e.target.value)} className={selectStyle}>
-              {listaAnios.map(a => <option key={`end-fisc-${a}`} value={a}>{a}</option>)}
-            </select>
+          <ChevronDown
+            size={15}
+            className={`text-white/70 transition-transform duration-200 ${mostrarFiltros ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {mostrarFiltros && (
+          <div className="p-3 bg-[#0B3A6E]/5">
+            <div className="flex flex-row gap-2.5 w-full">
+              <div className="flex-1 min-w-0">
+                <p className="text-[#0B3A6E] text-[8.5px] font-black uppercase tracking-wider mb-1">Desde Año</p>
+                <select value={anioInicio} onChange={(e) => setAnioInicio(e.target.value)} className={selectStyle}>
+                  {listaAnios.map(a => <option key={`start-fisc-${a}`} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[#0B3A6E] text-[8.5px] font-black uppercase tracking-wider mb-1">Hasta Año</p>
+                <select value={anioFin} onChange={(e) => setAnioFin(e.target.value)} className={selectStyle}>
+                  {listaAnios.map(a => <option key={`end-fisc-${a}`} value={a}>{a}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* RESUMEN FISCAL */}
+      <section className="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-5">
+        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mb-2">Resumen fiscal</p>
+        <div className="flex flex-row gap-1.5 w-full">
+          <div className="flex-1 bg-white border border-slate-200/80 p-1.5 rounded-xl min-w-0">
+            <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight truncate">Ingresos totales</p>
+            <div className="text-xs font-black text-slate-900 mt-0.5 truncate">
+              {statsFiscales.ingresosTotales.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
+            </div>
+          </div>
+
+          <div className="flex-1 bg-white border border-slate-200/80 p-1.5 rounded-xl min-w-0">
+            <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight truncate">Retenciones totales</p>
+            <div className="text-xs font-black text-slate-700 mt-0.5 truncate">
+              {statsFiscales.retencionesTotales.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
+            </div>
+          </div>
+
+          <div className={`flex-[1.6] p-1 border rounded-xl min-w-0 flex items-center gap-1 ${
+            esAPagar ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-emerald-50 border-emerald-200 text-emerald-600'
+          }`}>
+            <div className="p-1 bg-white rounded-md shrink-0">
+              <Wallet className="w-3 h-3 text-[#0B3A6E]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-slate-500 text-[7px] font-bold uppercase tracking-tight leading-none truncate">Resultado declaracion</p>
+              <h4 className="text-[9px] font-black mt-0.5 truncate">{esAPagar ? 'A Pagar' : 'A Devolver'}</h4>
+            </div>
+            <div className="text-[10px] font-black pr-1 shrink-0">
+              {Math.abs(statsFiscales.resultadoDeclaracion).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
+            </div>
           </div>
         </div>
       </section>
-
-      {/* KPIs SUPERIORES EN FORMATO CLARO */}
-      <div className="flex flex-row gap-1.5 mb-5 w-full">
-        <div className="flex-1 bg-slate-50 border border-slate-200/80 p-1.5 rounded-xl min-w-0">
-          <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight truncate">Ingresos totales</p>
-          <div className="text-xs font-black text-slate-900 mt-0.5 truncate">
-            {statsFiscales.ingresosTotales.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
-          </div>
-        </div>
-        
-        <div className="flex-1 bg-slate-50 border border-slate-200/80 p-1.5 rounded-xl min-w-0">
-          <p className="text-slate-500 text-[8px] font-bold uppercase tracking-tight truncate">Retenciones totales</p>
-          <div className="text-xs font-black text-slate-700 mt-0.5 truncate">
-            {statsFiscales.retencionesTotales.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
-          </div>
-        </div>
-        
-        <div className={`flex-[1.6] p-1 border rounded-xl min-w-0 flex items-center gap-1 ${
-          esAPagar ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-emerald-50 border-emerald-200 text-emerald-600'
-        }`}>
-          <div className="p-1 bg-slate-100 rounded-md shrink-0">
-            <Wallet className="w-3 h-3 text-[#0B3A6E]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-slate-500 text-[7px] font-bold uppercase tracking-tight leading-none truncate">Resultado declaracion</p>
-            <h4 className="text-[9px] font-black mt-0.5 truncate">{esAPagar ? 'A Pagar' : 'A Devolver'}</h4>
-          </div>
-          <div className="text-[10px] font-black pr-1 shrink-0">
-            {Math.abs(statsFiscales.resultadoDeclaracion).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
-          </div>
-        </div>
-      </div>
 
       <div className="h-2" />
 
@@ -553,17 +598,27 @@ export default function FiscalidadClientDashboard({ datosExcel }: FiscalProps) {
 
         </div>
       </section>
-      <AnalisisIAFiscalSection
-        registrosFiltrados={registrosFiltrados}
-        rangoEjercicios={`${anioInicio} - ${anioFin}`}
-      />
+
+      <div id="asistente-ia-fiscal">
+        <AnalisisIAFiscalSection
+          registrosFiltrados={registrosFiltrados}
+          rangoEjercicios={`${anioInicio} - ${anioFin}`}
+        />
+      </div>
+
+      {/* BOTÓN FLOTANTE: ACCESO RÁPIDO A LA IA */}
+      <button
+        onClick={() => document.getElementById("asistente-ia-fiscal")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        style={{ opacity: opacidadBotonIA, pointerEvents: opacidadBotonIA < 0.05 ? "none" : "auto" }}
+        className="fixed top-1/2 right-4 -translate-y-1/2 z-40 bg-[#0B3A6E] hover:bg-[#11498a] text-white p-3.5 rounded-full shadow-lg transition-opacity duration-300 flex items-center justify-center"
+        aria-label="Preguntar al especialista fiscal IA"
+      >
+        <Bot size={20} className="text-[#1FA187]" />
+      </button>
 
     </div>
   );
 }
-
-
-
 
 
 function AnalisisIAFiscalSection({
@@ -656,14 +711,14 @@ function AnalisisIAFiscalSection({
   };
 
   return (
-    <section className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col gap-3">
-      <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-        <h3 className="text-xs font-black tracking-wider uppercase text-[#0B3A6E] flex items-center gap-1.5">
-          ⚖️ Especialista en Fiscalidad IA
+    <section className="bg-[#0B3A6E] border border-[#0B3A6E] rounded-2xl p-3 flex flex-col gap-3 shadow-md">
+      <div className="flex justify-between items-center border-b border-white/15 pb-2">
+        <h3 className="text-xs font-black tracking-wider uppercase text-white flex items-center gap-1.5">
+          <Bot size={14} className="text-[#1FA187]" /> Especialista en Fiscalidad IA
         </h3>
         {!cargandoInicial && (
           <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-            limiteAlcanzado ? "bg-rose-100 text-rose-700" : "bg-[#0B3A6E]/10 text-[#0B3A6E]"
+            limiteAlcanzado ? "bg-rose-500/20 text-rose-200" : "bg-white/10 text-white"
           }`}>
             {usadas}/{limite} preguntas hoy
           </span>
@@ -673,7 +728,7 @@ function AnalisisIAFiscalSection({
       <button
         onClick={() => enviarConsulta()}
         disabled={cargando || limiteAlcanzado || cargandoInicial}
-        className="bg-[#0B3A6E] hover:bg-[#11498a] text-white text-[11px] font-black uppercase tracking-wider rounded-xl py-2 disabled:opacity-50"
+        className="bg-[#1FA187] hover:bg-[#198771] text-white text-[11px] font-black uppercase tracking-wider rounded-xl py-2 disabled:opacity-50 transition-all"
       >
         {cargando ? "Analizando..." : "Analizar mi situación fiscal"}
       </button>
@@ -681,7 +736,7 @@ function AnalisisIAFiscalSection({
       <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
         {mensajes.map((m, i) => (
           <div key={i} className={`rounded-xl p-2.5 text-[11px] leading-relaxed ${
-            m.rol === "ia" ? "bg-white border border-slate-200 text-slate-700" : "bg-[#0B3A6E]/5 text-slate-700 ml-6"
+            m.rol === "ia" ? "bg-white text-slate-700" : "bg-white/10 text-white ml-6"
           }`}>
             {m.contenido}
           </div>
@@ -689,7 +744,7 @@ function AnalisisIAFiscalSection({
       </div>
 
       {limiteAlcanzado ? (
-        <p className="text-[10px] text-rose-600 font-bold text-center py-1">
+        <p className="text-[10px] text-rose-200 font-bold text-center py-1">
           Has alcanzado el límite de {limite} consultas diarias al especialista fiscal. Vuelve a intentarlo mañana.
         </p>
       ) : (
@@ -699,12 +754,12 @@ function AnalisisIAFiscalSection({
             value={pregunta}
             onChange={(e) => setPregunta(e.target.value)}
             placeholder="Pregunta algo sobre tu fiscalidad..."
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] focus:outline-none focus:border-[#0B3A6E]"
+            className="flex-1 rounded-xl border border-white/20 bg-white/10 text-white placeholder:text-white/50 px-3 py-2 text-[11px] focus:outline-none focus:border-white/40"
           />
           <button
             onClick={() => enviarConsulta(pregunta)}
             disabled={cargando || !pregunta.trim() || cargandoInicial}
-            className="bg-[#1FA187] text-white px-4 rounded-xl text-[11px] font-black uppercase disabled:opacity-50"
+            className="bg-[#1FA187] hover:bg-[#198771] text-white px-4 rounded-xl text-[11px] font-black uppercase disabled:opacity-50 transition-all"
           >
             Enviar
           </button>

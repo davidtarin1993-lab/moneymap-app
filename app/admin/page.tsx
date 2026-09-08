@@ -16,7 +16,10 @@ import {
   BellRing,
   MessageCircle,
   FileSpreadsheet,
-  MapPinned
+  MapPinned,
+  Scale,
+  BarChart3,
+  GraduationCap,
 } from "lucide-react";
 
 interface PerfilCliente {
@@ -30,6 +33,8 @@ interface PerfilCliente {
   ultimaInteraccionMovimientos: string | null;
   ultimaInteraccionFiscal: string | null;
   tieneRuta: boolean;
+  nivel: number;
+
 }
 
 function formatearFecha(fecha: string | null): string {
@@ -58,6 +63,8 @@ export default function AdminDashboardPage() {
   const [clientes, setClientes] = useState<PerfilCliente[]>([]);
   const [nombre, setNombre] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [fechaRenovacionNueva, setFechaRenovacionNueva] = useState<string>("");
+  const [rolNuevo, setRolNuevo] = useState<"user" | "admin">("user");
 
   const [busqueda, setBusqueda] = useState<string>("");
   const [filtroEstado, setFiltroEstado] = useState<"todos" | "caducados">("todos");
@@ -175,6 +182,8 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           nombre,
           email,
+          fechaRenovacion: fechaRenovacionNueva || null,
+          role: rolNuevo,
         }),
       });
 
@@ -193,7 +202,10 @@ export default function AdminDashboardPage() {
 
       setNombre("");
       setEmail("");
+      setFechaRenovacionNueva("");
+      setRolNuevo("user");
       await cargarClientes();
+
     } catch (err: any) {
       setMensaje({
         tipo: "error",
@@ -448,6 +460,30 @@ export default function AdminDashboardPage() {
             <FileSpreadsheet size={13} />
             Extractos
           </Link>
+          <Link
+            href="/admin/extractos-fiscales"
+            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-[#0B3A6E] hover:bg-slate-50"
+          >
+            <Scale size={13} />
+            Fiscalidad
+          </Link>
+          <Link
+          href="/admin/formacion"
+          className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-[#0B3A6E] hover:bg-slate-50"
+        >
+          <GraduationCap size={13} />
+          Formación
+        </Link>
+          <Link
+            href="/admin/analytics"
+            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-[#0B3A6E] hover:bg-slate-50"
+          >
+            <BarChart3 size={13} />
+            Analítica
+          </Link>
+        <Link href="/admin/leads" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-[#0B3A6E] hover:bg-slate-50">
+          <Users size={13} /> Leads
+        </Link>
           <button
             onClick={handleLogout}
             className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -506,7 +542,34 @@ export default function AdminDashboardPage() {
                 className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:border-[#0B3A6E]"
               />
             </div>
+            <div className="space-y-1">
+              <label className="block text-[8.5px] text-slate-500 font-bold uppercase tracking-wider pl-1">
+                Próxima Renovación
+              </label>
 
+              <input
+                type="date"
+                value={fechaRenovacionNueva}
+                onChange={(e) => setFechaRenovacionNueva(e.target.value)}
+                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:border-[#0B3A6E]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-[8.5px] text-slate-500 font-bold uppercase tracking-wider pl-1">
+                Rol
+              </label>
+
+              <select
+                value={rolNuevo}
+                onChange={(e) => setRolNuevo(e.target.value as "user" | "admin")}
+                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:border-[#0B3A6E]"
+              >
+                <option value="user">Cliente</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            
             <button
               type="submit"
               disabled={cargando}
@@ -587,6 +650,7 @@ export default function AdminDashboardPage() {
                   <th className="py-2 px-2">Últ. Movimientos</th>
                   <th className="py-2 px-2">Últ. Fiscalidad</th>
                   <th className="py-2 px-2">Ruta</th>
+                  <th className="py-2 px-2">Nivel</th>
                   <th className="py-2 px-2">Renovación</th>
                   <th className="py-2 px-2">Estado</th>
                   <th className="py-2 px-2 text-right">Acciones</th>
@@ -595,7 +659,7 @@ export default function AdminDashboardPage() {
               <tbody>
                 {clientesFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-[11px] text-slate-400 italic text-center py-6">
+                    <td colSpan={10} className="text-[11px] text-slate-400 italic text-center py-6">
                       No hay clientes registrados o que coincidan.
                     </td>
                   </tr>
@@ -654,6 +718,11 @@ export default function AdminDashboardPage() {
                             {cli.tieneRuta ? "Sí" : "No"}
                           </span>
                         </td>
+                         <td className="py-2.5 px-2 whitespace-nowrap">
+                          <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-black text-[#0B3A6E] bg-[#0B3A6E]/10 rounded-full">
+                            {cli.nivel}
+                          </span>
+                        </td>                       
                         <td className="py-2.5 px-2 whitespace-nowrap">
                           <input
                             type="date"

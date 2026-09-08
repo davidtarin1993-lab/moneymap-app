@@ -7,15 +7,16 @@ import {
   BarChart3,
   Scale,
   MapPinned,
-  MessageCircle,
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
   Newspaper,
   LineChart,
-  CalendarPlus,
   Info,
   Pill,
+  FileSpreadsheet,
+  LifeBuoy,
+  FileText,
 } from "lucide-react";
 
 interface Paso {
@@ -97,9 +98,51 @@ export default function TourInteractivo() {
       ),
     },
     {
+      icono: <FileText size={20} />,
+      titulo: "Sube tu declaración de la renta",
+      descripcion: "Sube tu declaración en PDF y deja que la IA extraiga automáticamente todas las métricas clave, ejercicio a ejercicio.",
+      colorAccento: "#B45309",
+      mockup: (
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 flex items-center gap-3 shadow-sm">
+          <div className="bg-amber-500/10 p-3 rounded-xl">
+            <FileText size={22} className="text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <div className="h-2.5 w-32 bg-slate-200 rounded-full mb-2" />
+            <div className="h-2.5 w-20 bg-slate-100 rounded-full" />
+          </div>
+          <div className="text-[10px] font-black uppercase bg-amber-500 text-white px-3 py-2 rounded-lg">
+            Subir
+          </div>
+        </div>
+      ),
+    },
+    {
+      icono: <FileSpreadsheet size={20} />,
+      titulo: "Dashboard de Fiscalidad",
+      descripcion: "Visualiza tu evolución fiscal por ejercicio: ingresos, retenciones y resultado, todo en un mismo panel.",
+      colorAccento: "#B45309",
+      mockup: (
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
+          {[
+            { label: "2023", valor: "68%" },
+            { label: "2024", valor: "74%" },
+            { label: "2025", valor: "81%" },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-2.5">
+              <span className="text-[9px] font-black text-slate-400 uppercase w-8 shrink-0">{item.label}</span>
+              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-amber-500 rounded-full" style={{ width: item.valor }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
       icono: <Scale size={20} />,
       titulo: "Especialista fiscal IA",
-      descripcion: "Sube tu declaración de la renta y recibe recomendaciones de optimización fiscal, con tu propio especialista IA disponible cada día.",
+      descripcion: "Recibe recomendaciones de optimización fiscal con tu propio especialista IA disponible cada día.",
       colorAccento: "#B45309",
       mockup: (
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
@@ -115,8 +158,8 @@ export default function TourInteractivo() {
     },
     {
       icono: <MapPinned size={20} />,
-      titulo: "Tu Ruta personalizada",
-      descripcion: "Traza objetivos concretos junto a tu asesor (fondo de emergencia, inversión, etc.) y sigue tu progreso paso a paso.",
+      titulo: "Solicita tu ruta personalizada",
+      descripcion: "Será preparada por un asesor en el menor tiempo posible. Antes, deberás compartir tus movimientos bancarios, fiscalidad y saldos.",
       colorAccento: "#059669",
       mockup: (
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
@@ -136,23 +179,6 @@ export default function TourInteractivo() {
               <CheckCircle2 size={14} className="text-[#1FA187]" />
               <div className="h-2 w-20 bg-slate-100 rounded-full" />
             </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      icono: <MessageCircle size={20} />,
-      titulo: "Chat directo con tu asesor",
-      descripcion: "Habla con David en tiempo real desde la app, sin depender solo del email, cuando surja cualquier duda.",
-      colorAccento: "#0B3A6E",
-      mockup: (
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2.5">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 max-w-[75%]">
-            <div className="h-2.5 w-full bg-slate-200 rounded-full mb-1.5" />
-            <div className="h-2.5 w-2/3 bg-slate-200 rounded-full" />
-          </div>
-          <div className="bg-[#0B3A6E]/5 border border-[#0B3A6E]/10 rounded-xl p-3 max-w-[75%] ml-auto">
-            <div className="h-2.5 w-full bg-[#0B3A6E]/20 rounded-full" />
           </div>
         </div>
       ),
@@ -221,18 +247,20 @@ export default function TourInteractivo() {
       ),
     },
     {
-      icono: <CalendarPlus size={20} />,
-      titulo: "Asesor fiscal bajo petición",
-      descripcion: "Cuando lo necesites, reserva una sesión directa con un asesor fiscal humano para resolver dudas complejas.",
+      icono: <LifeBuoy size={20} />,
+      titulo: "Soporte técnico de la plataforma",
+      descripcion: "¿Algo no funciona como esperabas? Resolvemos cualquier duda sobre el funcionamiento de la aplicación en menos de 72 horas.",
       colorAccento: "#0B3A6E",
       mockup: (
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-3">
           <div className="bg-[#0B3A6E]/10 p-3 rounded-xl">
-            <CalendarPlus size={22} className="text-[#0B3A6E]" />
+            <LifeBuoy size={22} className="text-[#0B3A6E]" />
           </div>
           <div className="flex-1">
-            <div className="h-2.5 w-28 bg-slate-200 rounded-full mb-2" />
-            <div className="h-2.5 w-16 bg-slate-100 rounded-full" />
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-[#0B3A6E] uppercase mb-1.5">
+              <CheckCircle2 size={12} /> Respuesta garantizada
+            </div>
+            <div className="h-2.5 w-24 bg-slate-100 rounded-full" />
           </div>
         </div>
       ),

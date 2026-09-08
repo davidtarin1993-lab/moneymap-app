@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { pildoras } from "./pildorasData"; // <-- CONEXIÓN AUTOMÁTICA
+import { useRegistrarVisita } from "@/lib/useRegistrarVisita";
 
 const categorias = ["Todas", "Inversión", "Macroeconomía", "Ahorro", "Fiscalidad"];
 
 export default function PildorasPage() {
+  useRegistrarVisita("pildoras");
+
   const [busqueda, setBusqueda] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todas");
 

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const logoBuffer = fs.readFileSync(logoPath);
 
     const { error: sendError } = await resend.emails.send({
-      from: "MoneyMap <onboarding@resend.dev>",
+      from: "MoneyMap <hola@moneymap.es>",
       to: [perfil.email],
       subject: "Recordatorio: tu suscripción a MoneyMap necesita renovarse",
       html: plantillaRecordatorio(perfil.nombre),

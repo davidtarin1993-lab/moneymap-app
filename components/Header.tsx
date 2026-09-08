@@ -21,7 +21,7 @@ export default function Header() {
 
   return (
     <header className="px-4 py-3 flex items-center justify-between">
-      <Link href="/" className="flex items-center gap-3">
+      <Link href="/bienvenida" className="flex items-center gap-3">
         <Image
           src="/Multimedia/portada.png"
           alt="MoneyMap"

@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { listaMovimientos, capitalInicialSoporte } from "./carteraData";
+import { useRegistrarVisita } from "@/lib/useRegistrarVisita";
 
 export default function CarteraPage() {
+  useRegistrarVisita("cartera");
+
   const [mostrarDisclaimer, setMostrarDisclaimer] = useState<boolean>(false);
   const [pestañaMovimientos, setPestañaMovimientos] = useState<"abiertos" | "cerrados">("abiertos");
   const [movimientoExpandido, setMovimientoExpandido] = useState<number | null>(null);

@@ -70,6 +70,7 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const archivo = formData.get("archivo") as File | null;
+    const loteId = formData.get("loteId") as string | null;
 
     if (!archivo) {
       return NextResponse.json({ error: "No se ha recibido ningún archivo." }, { status: 400 });
@@ -101,6 +102,7 @@ export async function POST(request: Request) {
         archivo_nombre: nombreArchivo,
         archivo_path: pathStorage,
         estado: "procesando",
+        lote_id: loteId,
       })
       .select("id")
       .single();
