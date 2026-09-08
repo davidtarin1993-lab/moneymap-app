@@ -87,9 +87,9 @@ function AnalizadorContenido() {
     }
   };
 
-  const descargarPdf = () => {
+  const descargarPdf = async () => {
     if (!resultado) return;
-    generarPdfResultado({
+    await generarPdfResultado({
       tituloDocumento: "Análisis Gratuito de Gastos",
       subtitulo: `Resumen de tus ${resultado.movimientosAnalizados} movimientos analizados (versión de prueba, máx. ${resultado.limiteAplicado}).`,
       nombreCliente: nombre || undefined,

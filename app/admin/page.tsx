@@ -20,6 +20,7 @@ import {
   Scale,
   BarChart3,
   GraduationCap,
+  FileDown
 } from "lucide-react";
 
 interface PerfilCliente {
@@ -473,6 +474,9 @@ export default function AdminDashboardPage() {
         >
           <GraduationCap size={13} />
           Formación
+        </Link>
+        <Link href="/admin/documentos" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-slate-200 text-[#0B3A6E] hover:bg-slate-50">
+          <FileDown size={13} /> Documentos
         </Link>
           <Link
             href="/admin/analytics"

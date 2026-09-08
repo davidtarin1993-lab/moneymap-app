@@ -70,8 +70,8 @@ function PerfilInversorContenido() {
   const puntuacionTotal = Object.values(respuestas).reduce((a, b) => a + b, 0);
   const perfil = PERFILES.find((p) => puntuacionTotal >= p.rango[0] && puntuacionTotal <= p.rango[1]) ?? PERFILES[2];
   const posicionGauge = ((puntuacionTotal - PUNTOS_MIN) / (PUNTOS_MAX - PUNTOS_MIN)) * 100;
-  const descargarPdf = () => {
-    generarPdfResultado({
+  const descargarPdf = async () => {
+    await generarPdfResultado({
       tituloDocumento: "Tu Perfil de Inversor",
       subtitulo: "Resultado de tu perfilador de riesgo con MoneyMap.",
       nombreCliente: nombre || undefined,

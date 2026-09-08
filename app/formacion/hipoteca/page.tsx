@@ -5,20 +5,27 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Home, Info } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+
+type TipoHipoteca = "fijo" | "variable" | "mixta";
+type VistaGrafico = "total" | "anual";
 
 export default function SimuladorHipotecaPage() {
   const router = useRouter();
   const [cargandoAuth, setCargandoAuth] = useState(true);
 
   const [precioVivienda, setPrecioVivienda] = useState("250000");
+  const [sinEntrada, setSinEntrada] = useState(false);
   const [entradaPct, setEntradaPct] = useState("20");
   const [plazoAnios, setPlazoAnios] = useState("25");
 
-  const [tipoHipoteca, setTipoHipoteca] = useState<"fijo" | "variable">("fijo");
+  const [tipoHipoteca, setTipoHipoteca] = useState<TipoHipoteca>("fijo");
   const [tipoInteresFijo, setTipoInteresFijo] = useState("3.2");
   const [diferencial, setDiferencial] = useState("0.9");
   const [euriborActual, setEuriborActual] = useState("2.6");
+  const [aniosFijoMixta, setAniosFijoMixta] = useState("5");
+
+  const [vistaGrafico, setVistaGrafico] = useState<VistaGrafico>("total");
 
   useEffect(() => {
     async function verificar() {
@@ -29,35 +36,98 @@ export default function SimuladorHipotecaPage() {
     verificar();
   }, [router]);
 
-  const tasaAnualEfectiva = tipoHipoteca === "fijo"
-    ? Number(tipoInteresFijo) || 0
-    : (Number(diferencial) || 0) + (Number(euriborActual) || 0);
-
   const resultado = useMemo(() => {
     const precio = Number(precioVivienda) || 0;
-    const entrada = precio * ((Number(entradaPct) || 0) / 100);
+    const entradaPctEfectivo = sinEntrada ? 0 : (Number(entradaPct) || 0);
+    const entrada = precio * (entradaPctEfectivo / 100);
     const capitalPrestado = precio - entrada;
-    const meses = (Number(plazoAnios) || 1) * 12;
-    const tasaMensual = tasaAnualEfectiva / 100 / 12;
+    const mesesTotal = (Number(plazoAnios) || 1) * 12;
 
-    let cuotaMensual = 0;
-    if (tasaMensual > 0) {
-      cuotaMensual = capitalPrestado * (tasaMensual * Math.pow(1 + tasaMensual, meses)) / (Math.pow(1 + tasaMensual, meses) - 1);
+    let cuotaFija = 0, cuotaVariable = 0, mesesFijo = 0;
+    let cuotaMensualUnica = 0;
+    let rFijo = 0, rVariable = 0, rUnica = 0;
+
+    if (tipoHipoteca === "mixta") {
+      mesesFijo = Math.min((Number(aniosFijoMixta) || 0) * 12, mesesTotal);
+      rFijo = (Number(tipoInteresFijo) || 0) / 100 / 12;
+      rVariable = ((Number(diferencial) || 0) + (Number(euriborActual) || 0)) / 100 / 12;
+
+      if (rFijo > 0) {
+        cuotaFija = capitalPrestado * (rFijo * Math.pow(1 + rFijo, mesesTotal)) / (Math.pow(1 + rFijo, mesesTotal) - 1);
+      } else {
+        cuotaFija = capitalPrestado / mesesTotal;
+      }
+
+      let saldoTrasFijo = capitalPrestado;
+      if (rFijo > 0) {
+        saldoTrasFijo = capitalPrestado * Math.pow(1 + rFijo, mesesFijo) - cuotaFija * ((Math.pow(1 + rFijo, mesesFijo) - 1) / rFijo);
+      } else {
+        saldoTrasFijo = capitalPrestado - cuotaFija * mesesFijo;
+      }
+      saldoTrasFijo = Math.max(saldoTrasFijo, 0);
+
+      const mesesVariable = mesesTotal - mesesFijo;
+      if (mesesVariable > 0) {
+        if (rVariable > 0) {
+          cuotaVariable = saldoTrasFijo * (rVariable * Math.pow(1 + rVariable, mesesVariable)) / (Math.pow(1 + rVariable, mesesVariable) - 1);
+        } else {
+          cuotaVariable = saldoTrasFijo / mesesVariable;
+        }
+      }
     } else {
-      cuotaMensual = capitalPrestado / meses;
+      const tasaAnual = tipoHipoteca === "fijo"
+        ? (Number(tipoInteresFijo) || 0)
+        : ((Number(diferencial) || 0) + (Number(euriborActual) || 0));
+      rUnica = tasaAnual / 100 / 12;
+      if (rUnica > 0) {
+        cuotaMensualUnica = capitalPrestado * (rUnica * Math.pow(1 + rUnica, mesesTotal)) / (Math.pow(1 + rUnica, mesesTotal) - 1);
+      } else {
+        cuotaMensualUnica = capitalPrestado / mesesTotal;
+      }
     }
 
-    const totalPagado = cuotaMensual * meses;
+    // Simulación mes a mes: da el desglose anual real (capital vs. interés) y totales consistentes
+    let saldo = capitalPrestado;
+    const porAnio: Record<number, { anio: number; capital: number; interes: number }> = {};
+    let totalPagado = 0;
+
+    for (let m = 1; m <= mesesTotal; m++) {
+      const enFaseFija = tipoHipoteca === "mixta" && m <= mesesFijo;
+      const rMes = tipoHipoteca === "mixta" ? (enFaseFija ? rFijo : rVariable) : rUnica;
+      const cuotaMes = tipoHipoteca === "mixta" ? (enFaseFija ? cuotaFija : cuotaVariable) : cuotaMensualUnica;
+
+      const interesMes = saldo * rMes;
+      let capitalMes = cuotaMes - interesMes;
+      if (capitalMes > saldo) capitalMes = saldo;
+      if (capitalMes < 0) capitalMes = 0;
+      saldo = Math.max(saldo - capitalMes, 0);
+      totalPagado += capitalMes + interesMes;
+
+      const anio = Math.ceil(m / 12);
+      if (!porAnio[anio]) porAnio[anio] = { anio, capital: 0, interes: 0 };
+      porAnio[anio].capital += capitalMes;
+      porAnio[anio].interes += interesMes;
+    }
+
+    const datosPorAnio = Object.values(porAnio).map((d) => ({
+      anio: d.anio,
+      capital: Math.round(d.capital),
+      interes: Math.round(d.interes),
+    }));
+
     const totalIntereses = totalPagado - capitalPrestado;
 
     return {
       entrada,
       capitalPrestado,
-      cuotaMensual: isFinite(cuotaMensual) ? cuotaMensual : 0,
+      cuotaMensual: tipoHipoteca === "mixta" ? cuotaFija : cuotaMensualUnica,
+      cuotaFija,
+      cuotaVariable,
       totalPagado: isFinite(totalPagado) ? totalPagado : 0,
       totalIntereses: isFinite(totalIntereses) ? totalIntereses : 0,
+      datosPorAnio,
     };
-  }, [precioVivienda, entradaPct, plazoAnios, tasaAnualEfectiva]);
+  }, [precioVivienda, sinEntrada, entradaPct, plazoAnios, tipoHipoteca, tipoInteresFijo, diferencial, euriborActual, aniosFijoMixta]);
 
   const datosPie = [
     { name: "Capital prestado", value: resultado.capitalPrestado, color: "#0B3A6E" },
@@ -87,159 +157,207 @@ export default function SimuladorHipotecaPage() {
             <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Simulador de Hipoteca</h1>
           </div>
           <p className="mt-2 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
-            Calcula tu cuota mensual estimada a tipo fijo o variable.
+            Calcula tu cuota mensual a tipo fijo, variable o mixto.
           </p>
         </header>
 
-        {/* SELECTOR FIJO / VARIABLE */}
-        <div className="inline-flex bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1 mb-4">
-          <button
-            type="button"
-            onClick={() => setTipoHipoteca("fijo")}
-            className={`text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-lg transition-all ${
-              tipoHipoteca === "fijo" ? "bg-[#0B3A6E] text-white" : "text-slate-500"
-            }`}
-          >
-            Tipo Fijo
+        {/* SELECTOR FIJO / VARIABLE / MIXTA */}
+        <div className="inline-flex bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1 mb-4 w-full">
+          <button type="button" onClick={() => setTipoHipoteca("fijo")}
+            className={`flex-1 text-[10.5px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all ${tipoHipoteca === "fijo" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
+            Fijo
           </button>
-          <button
-            type="button"
-            onClick={() => setTipoHipoteca("variable")}
-            className={`text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-lg transition-all ${
-              tipoHipoteca === "variable" ? "bg-[#0B3A6E] text-white" : "text-slate-500"
-            }`}
-          >
-            Tipo Variable
+          <button type="button" onClick={() => setTipoHipoteca("variable")}
+            className={`flex-1 text-[10.5px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all ${tipoHipoteca === "variable" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
+            Variable
+          </button>
+          <button type="button" onClick={() => setTipoHipoteca("mixta")}
+            className={`flex-1 text-[10.5px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all ${tipoHipoteca === "mixta" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
+            Mixta
           </button>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 mb-4">
           <div>
             <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Precio de la vivienda (€)</label>
-            <input
-              type="number"
-              value={precioVivienda}
-              onChange={(e) => setPrecioVivienda(e.target.value)}
-              className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]"
-            />
+            <input type="number" value={precioVivienda} onChange={(e) => setPrecioVivienda(e.target.value)}
+              className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+          </div>
+
+          <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2.5">
+            <label htmlFor="sinEntrada" className="text-[10.5px] font-bold text-slate-600">Sin entrada (financiación 100%)</label>
+            <button
+              type="button"
+              id="sinEntrada"
+              onClick={() => setSinEntrada(!sinEntrada)}
+              className={`w-9 h-5 rounded-full transition-all relative shrink-0 ${sinEntrada ? "bg-[#1FA187]" : "bg-slate-300"}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${sinEntrada ? "left-4.5" : "left-0.5"}`} />
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Entrada (%)</label>
-              <input
-                type="number"
-                value={entradaPct}
-                onChange={(e) => setEntradaPct(e.target.value)}
-                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]"
-              />
+              <input type="number" value={sinEntrada ? 0 : entradaPct} onChange={(e) => setEntradaPct(e.target.value)}
+                disabled={sinEntrada}
+                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E] disabled:opacity-40 disabled:cursor-not-allowed" />
             </div>
             <div>
               <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Plazo (años)</label>
-              <input
-                type="number"
-                value={plazoAnios}
-                onChange={(e) => setPlazoAnios(e.target.value)}
-                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]"
-              />
+              <input type="number" value={plazoAnios} onChange={(e) => setPlazoAnios(e.target.value)}
+                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
             </div>
           </div>
 
-          {tipoHipoteca === "fijo" ? (
+          {tipoHipoteca === "fijo" && (
             <div>
               <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Tipo de interés fijo anual (%)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={tipoInteresFijo}
-                onChange={(e) => setTipoInteresFijo(e.target.value)}
-                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]"
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Diferencial (%)</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  value={diferencial}
-                  onChange={(e) => setDiferencial(e.target.value)}
-                  className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]"
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Euríbor actual (%)</label>
-                <input
-                  type="number"
-                  step="0.05"
-                  value={euriborActual}
-                  onChange={(e) => setEuriborActual(e.target.value)}
-                  className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]"
-                />
-              </div>
+              <input type="number" step="0.1" value={tipoInteresFijo} onChange={(e) => setTipoInteresFijo(e.target.value)}
+                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
             </div>
           )}
 
           {tipoHipoteca === "variable" && (
-            <p className="text-[10px] text-slate-400 font-medium">
-              Tasa aplicada estimada: <span className="font-black text-slate-600">{tasaAnualEfectiva.toFixed(2)}%</span> (diferencial + euríbor actual)
-            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Diferencial (%)</label>
+                <input type="number" step="0.05" value={diferencial} onChange={(e) => setDiferencial(e.target.value)}
+                  className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+              </div>
+              <div>
+                <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Euríbor actual (%)</label>
+                <input type="number" step="0.05" value={euriborActual} onChange={(e) => setEuriborActual(e.target.value)}
+                  className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+              </div>
+            </div>
+          )}
+
+          {tipoHipoteca === "mixta" && (
+            <>
+              <div>
+                <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Años a tipo fijo</label>
+                <input type="number" value={aniosFijoMixta} onChange={(e) => setAniosFijoMixta(e.target.value)}
+                  className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Tipo fijo inicial (%)</label>
+                  <input type="number" step="0.1" value={tipoInteresFijo} onChange={(e) => setTipoInteresFijo(e.target.value)}
+                    className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+                </div>
+                <div>
+                  <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Euríbor actual (%)</label>
+                  <input type="number" step="0.05" value={euriborActual} onChange={(e) => setEuriborActual(e.target.value)}
+                    className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Diferencial variable posterior (%)</label>
+                <input type="number" step="0.05" value={diferencial} onChange={(e) => setDiferencial(e.target.value)}
+                  className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+              </div>
+            </>
           )}
         </div>
 
-        <div className="bg-[#0B3A6E] rounded-2xl p-5 text-center mb-4 shadow-md">
-          <p className="text-[10px] font-black uppercase tracking-wider text-white/70">Cuota mensual estimada</p>
-          <p className="text-3xl font-black text-white mt-1">{formato(resultado.cuotaMensual)}€<span className="text-sm text-white/50">/mes</span></p>
-        </div>
+        {tipoHipoteca === "mixta" ? (
+          <div className="grid grid-cols-2 gap-2.5 mb-4">
+            <div className="bg-[#0B3A6E] rounded-2xl p-4 text-center shadow-md">
+              <p className="text-[9px] font-black uppercase tracking-wider text-white/70">Cuota fija ({aniosFijoMixta} años)</p>
+              <p className="text-xl font-black text-white mt-1">{formato(resultado.cuotaFija ?? 0)}€</p>
+            </div>
+            <div className="bg-amber-600 rounded-2xl p-4 text-center shadow-md">
+              <p className="text-[9px] font-black uppercase tracking-wider text-white/70">Cuota variable (resto)</p>
+              <p className="text-xl font-black text-white mt-1">{formato(resultado.cuotaVariable ?? 0)}€</p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#0B3A6E] rounded-2xl p-5 text-center mb-4 shadow-md">
+            <p className="text-[10px] font-black uppercase tracking-wider text-white/70">Cuota mensual estimada</p>
+            <p className="text-3xl font-black text-white mt-1">{formato(resultado.cuotaMensual)}€<span className="text-sm text-white/50">/mes</span></p>
+          </div>
+        )}
 
+        {/* GRÁFICO CON TOGGLE TOTAL / POR AÑO */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Reparto del coste total</p>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={datosPie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
-                  {datosPie.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Pie>
-                <Tooltip formatter={(value: any) => `${formato(Number(value))}€`} />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              {vistaGrafico === "total" ? "Reparto del coste total" : "Capital vs. intereses por año"}
+            </p>
+            <div className="inline-flex bg-white border border-slate-200 rounded-lg p-0.5 gap-0.5">
+              <button onClick={() => setVistaGrafico("total")}
+                className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all ${vistaGrafico === "total" ? "bg-[#0B3A6E] text-white" : "text-slate-400"}`}>
+                Total
+              </button>
+              <button onClick={() => setVistaGrafico("anual")}
+                className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all ${vistaGrafico === "anual" ? "bg-[#0B3A6E] text-white" : "text-slate-400"}`}>
+                Por año
+              </button>
+            </div>
           </div>
+
+          {vistaGrafico === "total" ? (
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={datosPie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
+                    {datosPie.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(value: any) => `${formato(Number(value))}€`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={resultado.datosPorAnio} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <XAxis dataKey="anio" tick={{ fontSize: 9, fontWeight: 700 }} tickFormatter={(v) => `A${v}`} />
+                  <YAxis hide />
+                  <Tooltip
+                    formatter={(value: any, name: any) => [`${formato(Number(value))}€`, name === "capital" ? "Capital" : "Intereses"]}
+                    labelFormatter={(l) => `Año ${l}`}
+                  />
+                  <Bar dataKey="capital" stackId="a" fill="#0B3A6E" />
+                  <Bar dataKey="interes" stackId="a" fill="#B45309" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
           <div className="flex justify-center gap-4 mt-2">
-            {datosPie.map((d) => (
-              <div key={d.name} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
-                <span className="text-[10px] font-bold text-slate-600">{d.name}</span>
-              </div>
-            ))}
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#0B3A6E]" />
+              <span className="text-[10px] font-bold text-slate-600">Capital</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-amber-700" />
+              <span className="text-[10px] font-bold text-slate-600">Intereses</span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 mb-4">
+        <div className={`grid gap-2.5 mb-4 ${resultado.entrada > 0 ? "grid-cols-3" : "grid-cols-2"}`}>
+          {resultado.entrada > 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl p-3">
+              <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Entrada</p>
+              <p className="text-sm font-black text-slate-800 mt-0.5">{formato(resultado.entrada)}€</p>
+            </div>
+          )}
           <div className="bg-white border border-slate-200 rounded-xl p-3">
-            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Entrada necesaria</p>
-            <p className="text-sm font-black text-slate-800 mt-0.5">{formato(resultado.entrada)}€</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-3">
-            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Capital a financiar</p>
+            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Total prestado</p>
             <p className="text-sm font-black text-slate-800 mt-0.5">{formato(resultado.capitalPrestado)}€</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-3">
-            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Intereses totales</p>
+            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Intereses a pagar</p>
             <p className="text-sm font-black text-amber-700 mt-0.5">{formato(resultado.totalIntereses)}€</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-3">
-            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Total a pagar</p>
-            <p className="text-sm font-black text-slate-800 mt-0.5">{formato(resultado.totalPagado)}€</p>
           </div>
         </div>
 
         <div className="flex items-start gap-2 bg-cyan-50 border border-cyan-100 rounded-xl p-3">
           <Info size={13} className="text-cyan-700 shrink-0 mt-0.5" />
           <p className="text-[10px] text-cyan-800 font-bold leading-relaxed">
-            {tipoHipoteca === "fijo"
-              ? "Estimación orientativa con cuota fija (sistema francés). No incluye seguros, comisiones ni gastos de notaría/registro."
-              : "Estimación orientativa usando el euríbor actual + tu diferencial como tasa constante. En una hipoteca variable real, la cuota se revisa periódicamente (normalmente cada 6 o 12 meses) y puede subir o bajar según evolucione el euríbor. No incluye seguros, comisiones ni gastos de notaría/registro."}
+            Estimación orientativa. No incluye seguros, comisiones ni gastos de notaría/registro. En hipotecas variables o mixtas, la cuota real se revisa periódicamente según el euríbor.
           </p>
         </div>
       </div>

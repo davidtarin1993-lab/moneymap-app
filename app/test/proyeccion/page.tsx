@@ -125,8 +125,8 @@ function ProyeccionContenido() {
     }
   };
 
-  const descargarPdf = () => {
-    generarPdfResultado({
+  const descargarPdf = async () => {
+    await generarPdfResultado({
       tituloDocumento: modo === "proyeccion" ? "Tu Proyección de Ahorro" : "Tu Plan hacia tu Objetivo",
       subtitulo:
         modo === "proyeccion"

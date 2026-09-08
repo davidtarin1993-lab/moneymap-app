@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Users, Sparkles, Target, Home, Mail } from "lucide-react";
+import { ArrowLeft, Users, Sparkles, Target, Home, Mail, TrendingUp, LineChart } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -20,6 +20,8 @@ const INFO_ORIGEN: Record<string, { label: string; icono: any; color: string }> 
   quiz: { label: "Quiz Financiero", icono: Sparkles, color: "text-emerald-600 bg-emerald-500/10" },
   perfil_inversor: { label: "Perfilador de Riesgo", icono: Target, color: "text-fuchsia-600 bg-fuchsia-500/10" },
   hipoteca: { label: "Simulador Hipoteca", icono: Home, color: "text-blue-600 bg-blue-500/10" },
+  analizador_gastos: { label: "Análisis de Gastos", icono: TrendingUp, color: "text-amber-600 bg-amber-500/10" },
+  proyeccion: { label: "Proyección Patrimonio", icono: LineChart, color: "text-violet-600 bg-violet-500/10" },
 };
 
 function formatearFecha(fecha: string): string {
@@ -77,8 +79,8 @@ export default function AdminLeadsPage() {
       </header>
 
       <div className="flex gap-2 mb-4 flex-wrap">
-        {["todos", "quiz", "perfil_inversor", "hipoteca"].map((f) => (
-          <button
+        {["todos", "quiz", "perfil_inversor", "hipoteca", "analizador_gastos", "proyeccion"].map((f) => (
+            <button
             key={f}
             onClick={() => setFiltro(f)}
             className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border transition-all ${

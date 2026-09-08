@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { User, ArrowRight, CheckCircle2, Sparkles, X, MessageCircleQuestion } from 'lucide-react';
+import { User, ArrowRight, CheckCircle2, Sparkles, X, MessageCircleQuestion, TrendingUp, Home, Target, LineChart } from 'lucide-react';
 import TourInteractivo from "@/components/TourInteractivo";
 
 const CARACTERISTICAS = [
@@ -182,7 +182,70 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+        {/* BLOQUE PRUÉBANOS GRATIS */}
+        <div className="w-full max-w-xl mx-auto">
+          <div className="bg-gradient-to-br from-[#0B3A6E] to-[#0B3A6E]/90 rounded-3xl p-7 shadow-lg relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#1FA187]/25 rounded-full blur-2xl pointer-events-none" />
 
+            <div className="relative z-10 text-center mb-5">
+              <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#1FA187] bg-[#1FA187]/15 px-3 py-1.5 rounded-full mb-3">
+                <Sparkles size={11} /> Pruébalo gratis ahora
+              </div>
+              <h2 className="text-lg font-black text-white uppercase tracking-tight">
+                Pruébanos antes de decidir
+              </h2>
+              <p className="text-white/60 text-xs font-medium mt-1.5 max-w-sm mx-auto">
+               Prueba la demo y descubre lo que tienes dentro. Sin cuenta, sin compromiso — y esto es solo una pequeña parte de todo lo que te espera.
+              </p>
+            </div>
+
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              <Link href="/test/analizador-gastos" className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-3.5 transition-all text-center">
+                <TrendingUp size={20} className="text-[#1FA187]" />
+                <span className="text-[10px] font-black uppercase tracking-wide text-white leading-tight">
+                  Analiza tus gastos
+                </span>
+              </Link>
+
+              <Link href="/test/hipoteca" className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-3.5 transition-all text-center">
+                <Home size={20} className="text-[#1FA187]" />
+                <span className="text-[10px] font-black uppercase tracking-wide text-white leading-tight">
+                  Simula tu hipoteca
+                </span>
+              </Link>
+
+              <Link href="/test/perfil-inversor" className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-3.5 transition-all text-center">
+                <Target size={20} className="text-[#1FA187]" />
+                <span className="text-[10px] font-black uppercase tracking-wide text-white leading-tight">
+                  Tu perfil inversor
+                </span>
+              </Link>
+
+              <Link href="/test/quiz" className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-3.5 transition-all text-center">
+                <Sparkles size={20} className="text-[#1FA187]" />
+                <span className="text-[10px] font-black uppercase tracking-wide text-white leading-tight">
+                  Quiz financiero
+                </span>
+              </Link>
+
+              <Link href="/test/proyeccion" className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-3.5 transition-all text-center">
+                <LineChart size={20} className="text-[#1FA187]" />
+                <span className="text-[10px] font-black uppercase tracking-wide text-white leading-tight">
+                  Proyecta tu ahorro
+                </span>
+              </Link>
+
+              <div className="flex flex-col items-center justify-center gap-1 bg-[#1FA187]/15 border border-[#1FA187]/30 rounded-2xl p-3.5 text-center">
+                <span className="text-[10px] font-black uppercase tracking-wide text-[#1FA187] leading-tight">
+                  + Mucho más
+                </span>
+                <span className="text-[9px] text-white/50 font-medium leading-tight">
+                  dentro de MoneyMap
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
         {/* BLOQUE 2: SUSCRIPCIÓN */}
         <div className="w-full max-w-xl mx-auto">
           <div className="bg-slate-50 border-2 border-[#0B3A6E]/30 rounded-3xl p-8 flex flex-col justify-between shadow-xs relative group hover:border-[#1FA187]/60 transition-all">

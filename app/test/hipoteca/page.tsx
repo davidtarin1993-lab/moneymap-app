@@ -3,22 +3,29 @@
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Info, Mail, ArrowRight, CheckCircle2 , FileDown} from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { Home, Info, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { useUtmParams } from "@/lib/useUtmParams";
-import { generarPdfResultado } from "@/lib/generarPdfResultado";
+import { generarPdfBase64 } from "@/lib/generarPdfResultado";
+
+type TipoHipoteca = "fijo" | "variable" | "mixta";
+type VistaGrafico = "total" | "anual";
 
 function SimuladorHipotecaContenido() {
   const { utmSource, utmMedium, utmCampaign } = useUtmParams();
 
   const [precioVivienda, setPrecioVivienda] = useState("250000");
+  const [sinEntrada, setSinEntrada] = useState(false);
   const [entradaPct, setEntradaPct] = useState("20");
   const [plazoAnios, setPlazoAnios] = useState("25");
 
-  const [tipoHipoteca, setTipoHipoteca] = useState<"fijo" | "variable">("fijo");
+  const [tipoHipoteca, setTipoHipoteca] = useState<TipoHipoteca>("fijo");
   const [tipoInteresFijo, setTipoInteresFijo] = useState("3.2");
   const [diferencial, setDiferencial] = useState("0.9");
   const [euriborActual, setEuriborActual] = useState("2.6");
+  const [aniosFijoMixta, setAniosFijoMixta] = useState("5");
+
+  const [vistaGrafico, setVistaGrafico] = useState<VistaGrafico>("total");
 
   const [email, setEmail] = useState("");
   const [nombre, setNombre] = useState("");
@@ -26,35 +33,98 @@ function SimuladorHipotecaContenido() {
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
 
-  const tasaAnualEfectiva = tipoHipoteca === "fijo"
-    ? Number(tipoInteresFijo) || 0
-    : (Number(diferencial) || 0) + (Number(euriborActual) || 0);
-
   const resultado = useMemo(() => {
     const precio = Number(precioVivienda) || 0;
-    const entrada = precio * ((Number(entradaPct) || 0) / 100);
+    const entradaPctEfectivo = sinEntrada ? 0 : (Number(entradaPct) || 0);
+    const entrada = precio * (entradaPctEfectivo / 100);
     const capitalPrestado = precio - entrada;
-    const meses = (Number(plazoAnios) || 1) * 12;
-    const tasaMensual = tasaAnualEfectiva / 100 / 12;
+    const mesesTotal = (Number(plazoAnios) || 1) * 12;
 
-    let cuotaMensual = 0;
-    if (tasaMensual > 0) {
-      cuotaMensual = capitalPrestado * (tasaMensual * Math.pow(1 + tasaMensual, meses)) / (Math.pow(1 + tasaMensual, meses) - 1);
+    let cuotaFija = 0, cuotaVariable = 0, mesesFijo = 0;
+    let cuotaMensualUnica = 0;
+    let rFijo = 0, rVariable = 0, rUnica = 0;
+
+    if (tipoHipoteca === "mixta") {
+      mesesFijo = Math.min((Number(aniosFijoMixta) || 0) * 12, mesesTotal);
+      rFijo = (Number(tipoInteresFijo) || 0) / 100 / 12;
+      rVariable = ((Number(diferencial) || 0) + (Number(euriborActual) || 0)) / 100 / 12;
+
+      if (rFijo > 0) {
+        cuotaFija = capitalPrestado * (rFijo * Math.pow(1 + rFijo, mesesTotal)) / (Math.pow(1 + rFijo, mesesTotal) - 1);
+      } else {
+        cuotaFija = capitalPrestado / mesesTotal;
+      }
+
+      let saldoTrasFijo = capitalPrestado;
+      if (rFijo > 0) {
+        saldoTrasFijo = capitalPrestado * Math.pow(1 + rFijo, mesesFijo) - cuotaFija * ((Math.pow(1 + rFijo, mesesFijo) - 1) / rFijo);
+      } else {
+        saldoTrasFijo = capitalPrestado - cuotaFija * mesesFijo;
+      }
+      saldoTrasFijo = Math.max(saldoTrasFijo, 0);
+
+      const mesesVariable = mesesTotal - mesesFijo;
+      if (mesesVariable > 0) {
+        if (rVariable > 0) {
+          cuotaVariable = saldoTrasFijo * (rVariable * Math.pow(1 + rVariable, mesesVariable)) / (Math.pow(1 + rVariable, mesesVariable) - 1);
+        } else {
+          cuotaVariable = saldoTrasFijo / mesesVariable;
+        }
+      }
     } else {
-      cuotaMensual = capitalPrestado / meses;
+      const tasaAnual = tipoHipoteca === "fijo"
+        ? (Number(tipoInteresFijo) || 0)
+        : ((Number(diferencial) || 0) + (Number(euriborActual) || 0));
+      rUnica = tasaAnual / 100 / 12;
+      if (rUnica > 0) {
+        cuotaMensualUnica = capitalPrestado * (rUnica * Math.pow(1 + rUnica, mesesTotal)) / (Math.pow(1 + rUnica, mesesTotal) - 1);
+      } else {
+        cuotaMensualUnica = capitalPrestado / mesesTotal;
+      }
     }
 
-    const totalPagado = cuotaMensual * meses;
+    // Simulación mes a mes: da el desglose anual real y unos totales consistentes con el gráfico
+    let saldo = capitalPrestado;
+    const porAnio: Record<number, { anio: number; capital: number; interes: number }> = {};
+    let totalPagado = 0;
+
+    for (let m = 1; m <= mesesTotal; m++) {
+      const enFaseFija = tipoHipoteca === "mixta" && m <= mesesFijo;
+      const rMes = tipoHipoteca === "mixta" ? (enFaseFija ? rFijo : rVariable) : rUnica;
+      const cuotaMes = tipoHipoteca === "mixta" ? (enFaseFija ? cuotaFija : cuotaVariable) : cuotaMensualUnica;
+
+      const interesMes = saldo * rMes;
+      let capitalMes = cuotaMes - interesMes;
+      if (capitalMes > saldo) capitalMes = saldo;
+      if (capitalMes < 0) capitalMes = 0;
+      saldo = Math.max(saldo - capitalMes, 0);
+      totalPagado += capitalMes + interesMes;
+
+      const anio = Math.ceil(m / 12);
+      if (!porAnio[anio]) porAnio[anio] = { anio, capital: 0, interes: 0 };
+      porAnio[anio].capital += capitalMes;
+      porAnio[anio].interes += interesMes;
+    }
+
+    const datosPorAnio = Object.values(porAnio).map((d) => ({
+      anio: d.anio,
+      capital: Math.round(d.capital),
+      interes: Math.round(d.interes),
+    }));
+
     const totalIntereses = totalPagado - capitalPrestado;
 
     return {
       entrada,
       capitalPrestado,
-      cuotaMensual: isFinite(cuotaMensual) ? cuotaMensual : 0,
+      cuotaMensual: tipoHipoteca === "mixta" ? cuotaFija : cuotaMensualUnica,
+      cuotaFija,
+      cuotaVariable,
       totalPagado: isFinite(totalPagado) ? totalPagado : 0,
       totalIntereses: isFinite(totalIntereses) ? totalIntereses : 0,
+      datosPorAnio,
     };
-  }, [precioVivienda, entradaPct, plazoAnios, tasaAnualEfectiva]);
+  }, [precioVivienda, sinEntrada, entradaPct, plazoAnios, tipoHipoteca, tipoInteresFijo, diferencial, euriborActual, aniosFijoMixta]);
 
   const datosPie = [
     { name: "Capital prestado", value: resultado.capitalPrestado, color: "#0B3A6E" },
@@ -62,57 +132,87 @@ function SimuladorHipotecaContenido() {
   ];
 
   const formato = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 0 });
-  const descargarPdf = () => {
-    generarPdfResultado({
-      tituloDocumento: "Simulación de Hipoteca",
-      subtitulo: `Vivienda de ${Number(precioVivienda).toLocaleString("es-ES")}€ a tipo ${tipoHipoteca === "fijo" ? "fijo" : "variable"}, a ${plazoAnios} años.`,
-      nombreCliente: nombre || undefined,
-      metricasDestacadas: [
-        { etiqueta: "Cuota mensual", valor: `${formato(resultado.cuotaMensual)}€` },
-        { etiqueta: "Entrada", valor: `${formato(resultado.entrada)}€` },
-        { etiqueta: "Total intereses", valor: `${formato(resultado.totalIntereses)}€` },
-      ],
-      secciones: [
-        {
-          titulo: "Desglose",
-          contenido: `Capital a financiar: ${formato(resultado.capitalPrestado)}€\nTotal a pagar en ${plazoAnios} años: ${formato(resultado.totalPagado)}€\nTasa aplicada: ${tasaAnualEfectiva.toFixed(2)}%`,
-        },
-        {
-          titulo: "Aviso",
-          contenido: "Estimación orientativa. No incluye seguros, comisiones ni gastos de notaría/registro.",
-        },
-      ],
-      nombreArchivo: "moneymap-simulacion-hipoteca.pdf",
-    });
-  };
-  const handleEnviarEmail = async (e: React.FormEvent) => {
+
+  const handleEnviarPdf = async (e: React.FormEvent) => {
+    
     e.preventDefault();
     setEnviando(true);
     setErrorEnvio(null);
 
     try {
-      const response = await fetch("/api/public/leads", {
+      const etiquetaTipo = tipoHipoteca === "fijo" ? "Fija" : tipoHipoteca === "variable" ? "Variable" : "Mixta";
+
+      const metricas = tipoHipoteca === "mixta"
+        ? [
+            { etiqueta: "Tipo de hipoteca", valor: etiquetaTipo },
+            { etiqueta: "Cuota fija inicial", valor: `${formato(resultado.cuotaFija ?? 0)}€` },
+            { etiqueta: "Cuota tras el cambio", valor: `${formato(resultado.cuotaVariable ?? 0)}€` },
+          ]
+        : [
+            { etiqueta: "Tipo de hipoteca", valor: etiquetaTipo },
+            { etiqueta: "Cuota mensual", valor: `${formato(resultado.cuotaMensual)}€` },
+            { etiqueta: "Entrada", valor: `${formato(resultado.entrada)}€` },
+          ];
+
+      const pdfBase64 = await generarPdfBase64({
+        tituloDocumento: "Simulación de Hipoteca",
+        subtitulo: `Vivienda de ${Number(precioVivienda).toLocaleString("es-ES")}€ a tipo ${etiquetaTipo.toLowerCase()}, a ${plazoAnios} años.`,
+        nombreCliente: nombre || undefined,
+        emailCliente: email,
+        metricasDestacadas: metricas,
+        tituloGrafico: "Reparto del coste total",
+        graficoDistribucion: [
+          { etiqueta: "Capital prestado", valor: resultado.capitalPrestado, color: "#0B3A6E" },
+          { etiqueta: "Intereses totales", valor: Math.max(resultado.totalIntereses, 0), color: "#B45309" },
+        ],
+        secciones: [
+          {
+            titulo: "Desglose",
+            contenido: `Capital a financiar: ${formato(resultado.capitalPrestado)}€\nTotal a pagar en ${plazoAnios} años: ${formato(resultado.totalPagado)}€${
+              tipoHipoteca === "mixta" ? `\nAños a tipo fijo: ${aniosFijoMixta}` : ""
+            }`,
+          },
+          {
+            titulo: "Aviso",
+            contenido: "Estimación orientativa. No incluye seguros, comisiones ni gastos de notaría/registro.",
+          },
+        ],
+        nombreArchivo: "moneymap-simulacion-hipoteca.pdf",
+      });
+      const response = await fetch("/api/public/enviar-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          nombre,
+          tipoDocumento: "hipoteca",
+          asunto: "Tu simulación de hipoteca — MoneyMap",
+          pdfBase64,
+          nombreArchivo: "moneymap-simulacion-hipoteca.pdf",
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudo enviar el documento.");
+
+      // También lo registramos como lead del funnel
+      fetch("/api/public/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
           nombre,
           origen: "hipoteca",
-          resultadoResumen: {
-            precioVivienda, tipoHipoteca, cuotaMensual: Math.round(resultado.cuotaMensual),
-          },
+          resultadoResumen: { precioVivienda, tipoHipoteca, cuotaMensual: Math.round(resultado.cuotaMensual) },
           utmSource,
           utmMedium,
           utmCampaign,
         }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "No se pudo enviar.");
+      }).catch(() => {});
 
       setEmailEnviado(true);
     } catch (err: any) {
-      setErrorEnvio(err.message || "Error inesperado.");
+      setErrorEnvio(err.message || "No se pudo enviar el documento. Inténtalo de nuevo.");
     } finally {
       setEnviando(false);
     }
@@ -121,7 +221,6 @@ function SimuladorHipotecaContenido() {
   return (
     <main className="w-full min-h-screen bg-white text-slate-800 px-4 py-6 md:py-10 pb-16 antialiased">
       <div className="max-w-lg mx-auto w-full">
-
         <div className="flex justify-center mb-4">
           <Image src="/Multimedia/portada.png" alt="MoneyMap" width={160} height={46} className="object-contain" unoptimized />
         </div>
@@ -132,18 +231,22 @@ function SimuladorHipotecaContenido() {
             <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Simulador de Hipoteca</h1>
           </div>
           <p className="mt-2 text-xs md:text-sm text-slate-500 max-w-md mx-auto font-medium leading-normal">
-            Calcula tu cuota mensual a tipo fijo o variable. Gratis, sin registro.
+            Calcula tu cuota a tipo fijo, variable o mixto. Gratis, sin registro.
           </p>
         </header>
 
-        <div className="inline-flex bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1 mb-4">
+        <div className="inline-flex bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1 mb-4 w-full">
           <button type="button" onClick={() => setTipoHipoteca("fijo")}
-            className={`text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-lg transition-all ${tipoHipoteca === "fijo" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
-            Tipo Fijo
+            className={`flex-1 text-[10.5px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all ${tipoHipoteca === "fijo" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
+            Fijo
           </button>
           <button type="button" onClick={() => setTipoHipoteca("variable")}
-            className={`text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-lg transition-all ${tipoHipoteca === "variable" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
-            Tipo Variable
+            className={`flex-1 text-[10.5px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all ${tipoHipoteca === "variable" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
+            Variable
+          </button>
+          <button type="button" onClick={() => setTipoHipoteca("mixta")}
+            className={`flex-1 text-[10.5px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all ${tipoHipoteca === "mixta" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
+            Mixta
           </button>
         </div>
 
@@ -154,11 +257,24 @@ function SimuladorHipotecaContenido() {
               className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
           </div>
 
+          <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2.5">
+            <label htmlFor="sinEntradaPublic" className="text-[10.5px] font-bold text-slate-600">Sin entrada (financiación 100%)</label>
+            <button
+              type="button"
+              id="sinEntradaPublic"
+              onClick={() => setSinEntrada(!sinEntrada)}
+              className={`w-9 h-5 rounded-full transition-all relative shrink-0 ${sinEntrada ? "bg-[#1FA187]" : "bg-slate-300"}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${sinEntrada ? "left-4.5" : "left-0.5"}`} />
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Entrada (%)</label>
-              <input type="number" value={entradaPct} onChange={(e) => setEntradaPct(e.target.value)}
-                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+              <input type="number" value={sinEntrada ? 0 : entradaPct} onChange={(e) => setEntradaPct(e.target.value)}
+                disabled={sinEntrada}
+                className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E] disabled:opacity-40 disabled:cursor-not-allowed" />
             </div>
             <div>
               <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Plazo (años)</label>
@@ -167,13 +283,15 @@ function SimuladorHipotecaContenido() {
             </div>
           </div>
 
-          {tipoHipoteca === "fijo" ? (
+          {tipoHipoteca === "fijo" && (
             <div>
               <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Tipo de interés fijo anual (%)</label>
               <input type="number" step="0.1" value={tipoInteresFijo} onChange={(e) => setTipoInteresFijo(e.target.value)}
                 className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
             </div>
-          ) : (
+          )}
+
+          {tipoHipoteca === "variable" && (
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Diferencial (%)</label>
@@ -187,34 +305,124 @@ function SimuladorHipotecaContenido() {
               </div>
             </div>
           )}
+
+          {tipoHipoteca === "mixta" && (
+            <>
+              <div>
+                <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Años a tipo fijo</label>
+                <input type="number" value={aniosFijoMixta} onChange={(e) => setAniosFijoMixta(e.target.value)}
+                  className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Tipo fijo inicial (%)</label>
+                  <input type="number" step="0.1" value={tipoInteresFijo} onChange={(e) => setTipoInteresFijo(e.target.value)}
+                    className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+                </div>
+                <div>
+                  <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Euríbor actual (%)</label>
+                  <input type="number" step="0.05" value={euriborActual} onChange={(e) => setEuriborActual(e.target.value)}
+                    className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] text-slate-500 font-bold uppercase mb-1">Diferencial variable posterior (%)</label>
+                <input type="number" step="0.05" value={diferencial} onChange={(e) => setDiferencial(e.target.value)}
+                  className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:border-[#0B3A6E]" />
+              </div>
+            </>
+          )}
         </div>
 
-        <div className="bg-[#0B3A6E] rounded-2xl p-5 text-center mb-4 shadow-md">
-          <p className="text-[10px] font-black uppercase tracking-wider text-white/70">Cuota mensual estimada</p>
-          <p className="text-3xl font-black text-white mt-1">{formato(resultado.cuotaMensual)}€<span className="text-sm text-white/50">/mes</span></p>
-        </div>
+        {tipoHipoteca === "mixta" ? (
+          <div className="grid grid-cols-2 gap-2.5 mb-4">
+            <div className="bg-[#0B3A6E] rounded-2xl p-4 text-center shadow-md">
+              <p className="text-[9px] font-black uppercase tracking-wider text-white/70">Cuota fija ({aniosFijoMixta} años)</p>
+              <p className="text-xl font-black text-white mt-1">{formato(resultado.cuotaFija ?? 0)}€</p>
+            </div>
+            <div className="bg-amber-600 rounded-2xl p-4 text-center shadow-md">
+              <p className="text-[9px] font-black uppercase tracking-wider text-white/70">Cuota variable (resto)</p>
+              <p className="text-xl font-black text-white mt-1">{formato(resultado.cuotaVariable ?? 0)}€</p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#0B3A6E] rounded-2xl p-5 text-center mb-4 shadow-md">
+            <p className="text-[10px] font-black uppercase tracking-wider text-white/70">Cuota mensual estimada</p>
+            <p className="text-3xl font-black text-white mt-1">{formato(resultado.cuotaMensual)}€<span className="text-sm text-white/50">/mes</span></p>
+          </div>
+        )}
 
+        {/* GRÁFICO CON TOGGLE */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Reparto del coste total</p>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={datosPie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
-                  {datosPie.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Pie>
-                <Tooltip formatter={(value: any) => `${formato(Number(value))}€`} />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              {vistaGrafico === "total" ? "Reparto del coste total" : "Capital vs. intereses por año"}
+            </p>
+            <div className="inline-flex bg-white border border-slate-200 rounded-lg p-0.5 gap-0.5">
+              <button onClick={() => setVistaGrafico("total")}
+                className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all ${vistaGrafico === "total" ? "bg-[#0B3A6E] text-white" : "text-slate-400"}`}>
+                Total
+              </button>
+              <button onClick={() => setVistaGrafico("anual")}
+                className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all ${vistaGrafico === "anual" ? "bg-[#0B3A6E] text-white" : "text-slate-400"}`}>
+                Por año
+              </button>
+            </div>
+          </div>
+
+          {vistaGrafico === "total" ? (
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={datosPie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
+                    {datosPie.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(value: any) => `${formato(Number(value))}€`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={resultado.datosPorAnio} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <XAxis dataKey="anio" tick={{ fontSize: 9, fontWeight: 700 }} tickFormatter={(v) => `A${v}`} />
+                  <YAxis hide />
+                  <Tooltip
+                    formatter={(value: any, name: any) => [`${formato(Number(value))}€`, name === "capital" ? "Capital" : "Intereses"]}
+                    labelFormatter={(l) => `Año ${l}`}
+                  />
+                  <Bar dataKey="capital" stackId="a" fill="#0B3A6E" />
+                  <Bar dataKey="interes" stackId="a" fill="#B45309" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          <div className="flex justify-center gap-4 mt-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#0B3A6E]" />
+              <span className="text-[10px] font-bold text-slate-600">Capital</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-amber-700" />
+              <span className="text-[10px] font-bold text-slate-600">Intereses</span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 mb-4">
+        <div className={`grid gap-2.5 mb-4 ${resultado.entrada > 0 ? "grid-cols-3" : "grid-cols-2"}`}>
+          {resultado.entrada > 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl p-3">
+              <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Entrada</p>
+              <p className="text-sm font-black text-slate-800 mt-0.5">{formato(resultado.entrada)}€</p>
+            </div>
+          )}
           <div className="bg-white border border-slate-200 rounded-xl p-3">
-            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Entrada necesaria</p>
-            <p className="text-sm font-black text-slate-800 mt-0.5">{formato(resultado.entrada)}€</p>
+            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Total prestado</p>
+            <p className="text-sm font-black text-slate-800 mt-0.5">{formato(resultado.capitalPrestado)}€</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-3">
-            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Intereses totales</p>
+            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Intereses a pagar</p>
             <p className="text-sm font-black text-amber-700 mt-0.5">{formato(resultado.totalIntereses)}€</p>
           </div>
         </div>
@@ -225,28 +433,25 @@ function SimuladorHipotecaContenido() {
             Estimación orientativa. No incluye seguros, comisiones ni gastos de notaría/registro.
           </p>
         </div>
-        <button onClick={descargarPdf}
-          className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl p-3 text-xs font-black uppercase tracking-wider transition-all mb-4">
-          <FileDown size={14} /> Descargar simulación en PDF
-        </button>
-        {/* CAPTURA DE LEAD — muro suave, no bloquea el cálculo */}
+
+        {/* ENVÍO DEL PDF POR EMAIL */}
         {!emailEnviado ? (
           <div className="bg-[#1FA187]/10 border border-[#1FA187]/30 rounded-2xl p-5">
             <div className="flex items-center gap-1.5 mb-2">
               <Mail size={14} className="text-[#1FA187]" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1FA187]">¿Quieres guardar este cálculo?</h3>
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#1FA187]">Recibe esta simulación en tu email</h3>
             </div>
             <p className="text-[11px] text-slate-600 font-medium mb-4">
-              Déjanos tu email y te lo enviamos, además de un análisis con un asesor de MoneyMap si lo necesitas.
+              Te enviamos un PDF con todos estos datos directamente a tu correo.
             </p>
-            <form onSubmit={handleEnviarEmail} className="space-y-2.5">
-              <input type="text" placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)}
+            <form onSubmit={handleEnviarPdf} className="space-y-2.5">
+              <input type="text" required placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)}
                 className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-[#1FA187] font-medium" />
               <input type="email" required placeholder="Tu correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-[#1FA187] font-medium" />
               <button type="submit" disabled={enviando}
                 className="w-full bg-[#1FA187] hover:bg-[#198771] disabled:opacity-60 text-white text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center justify-center gap-1.5 transition-all">
-                {enviando ? "Enviando..." : <>Enviarme este cálculo <ArrowRight size={14} /></>}
+                {enviando ? "Enviando..." : <>Enviarme el PDF <ArrowRight size={14} /></>}
               </button>
               {errorEnvio && <p className="text-red-500 text-[10px] font-bold text-center">{errorEnvio}</p>}
             </form>
@@ -254,8 +459,8 @@ function SimuladorHipotecaContenido() {
         ) : (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-center">
             <CheckCircle2 size={20} className="text-emerald-600 mx-auto mb-2" />
-            <p className="text-xs font-black text-emerald-800">¡Listo! Te lo hemos guardado.</p>
-            <Link href="/" className="inline-flex items-center gap-1.5 mt-3 text-[#0B3A6E] text-xs font-black uppercase underline">
+            <p className="text-xs font-black text-emerald-800">¡Enviado! Revisa tu bandeja de entrada.</p>
+            <Link href="/" className="inline-flex items-center gap-1.5 mt-3 text-[#0B3A6E] text-[11px] font-black uppercase underline">
               Conocer MoneyMap <ArrowRight size={12} />
             </Link>
           </div>

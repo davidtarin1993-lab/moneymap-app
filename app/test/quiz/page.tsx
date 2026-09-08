@@ -80,8 +80,8 @@ function QuizPublicoContenido() {
   const puntuacionGlobal = Math.round(
     puntuacionesPorCategoria.reduce((sum, c) => sum + c.puntuacion, 0) / puntuacionesPorCategoria.length
   );
-  const descargarPdf = () => {
-    generarPdfResultado({
+  const descargarPdf = async () => {
+    await generarPdfResultado({
       tituloDocumento: "Tu Quiz Financiero",
       subtitulo: "Resultado de tu evaluación financiera personal con MoneyMap.",
       nombreCliente: nombre || undefined,
