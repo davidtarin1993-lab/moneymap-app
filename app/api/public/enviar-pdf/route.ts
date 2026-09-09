@@ -33,11 +33,51 @@ export async function POST(request: Request) {
       ...(destinatarioAdmin ? { bcc: [destinatarioAdmin] } : {}),
       subject: asunto || "Tu documento de MoneyMap",
       html: `
-        <div style="font-family: Arial, sans-serif; font-size: 14px; color:#334155;">
-          <p>Hola${nombre ? ` ${nombre}` : ""},</p>
-          <p>Aquí tienes tu documento adjunto en PDF.</p>
-          <p style="color:#94a3b8;font-size:12px;">MoneyMap — Tu dinero, con dirección.</p>
-        </div>
+      <!DOCTYPE html>
+      <html>
+        <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, Helvetica, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:40px 0;">
+            <tr>
+              <td align="center">
+                <table width="520" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                  <tr>
+                    <td align="center" style="padding:32px 40px 20px 40px;border-bottom:3px solid #0B3A6E;">
+                      <img src="https://www.moneymap.es/Multimedia/portada.png" alt="MoneyMap" width="180" style="display:block;margin:0 auto;" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:32px 40px 16px 40px;">
+                      <h1 style="color:#0B3A6E;font-size:20px;margin:0 0 12px 0;">${nombre ? `Hola ${nombre},` : "Hola,"}</h1>
+                      <p style="color:#334155;font-size:14px;line-height:1.6;margin:0 0 16px 0;">
+                        Aquí tienes tu documento en PDF tal como lo solicitaste — lo encontrarás adjunto a este correo.
+                      </p>
+                      <p style="color:#334155;font-size:14px;line-height:1.6;margin:0 0 16px 0;">
+                        Esto es solo una muestra de lo que MoneyMap puede hacer por ti: análisis automático de tus finanzas, optimización fiscal y una ruta personalizada junto a un asesor real.
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding:0 40px 32px 40px;">
+                      <a href="https://www.moneymap.es" style="background-color:#1FA187;color:#ffffff;text-decoration:none;font-weight:bold;font-size:13px;padding:14px 28px;border-radius:10px;display:inline-block;">Descubrir MoneyMap</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:20px 40px 32px 40px;border-top:1px solid #eef2f6;">
+                      <p style="color:#0B3A6E;font-size:13px;font-weight:bold;margin:0 0 2px 0;">El equipo de MoneyMap</p>
+                      <p style="color:#94a3b8;font-size:11px;margin:0;">Tu dinero, con dirección.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:16px 40px 32px 40px;border-top:1px solid #eef2f6;">
+                      <p style="color:#94a3b8;font-size:11px;margin:0;">© 2026 MoneyMap. Si tienes cualquier duda, responde a este correo y te ayudamos encantados.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
       `,
       attachments: [
         { filename: nombreArchivo || "documento-moneymap.pdf", content: pdfBase64 },

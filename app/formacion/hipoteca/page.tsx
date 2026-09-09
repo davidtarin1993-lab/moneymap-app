@@ -4,11 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Home, Info } from "lucide-react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { ArrowLeft, Home, Info, ChevronDown } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 type TipoHipoteca = "fijo" | "variable" | "mixta";
-type VistaGrafico = "total" | "anual";
 
 export default function SimuladorHipotecaPage() {
   const router = useRouter();
@@ -25,7 +24,7 @@ export default function SimuladorHipotecaPage() {
   const [euriborActual, setEuriborActual] = useState("2.6");
   const [aniosFijoMixta, setAniosFijoMixta] = useState("5");
 
-  const [vistaGrafico, setVistaGrafico] = useState<VistaGrafico>("total");
+  const [mostrarAmortizacion, setMostrarAmortizacion] = useState(false);
 
   useEffect(() => {
     async function verificar() {
@@ -86,9 +85,8 @@ export default function SimuladorHipotecaPage() {
       }
     }
 
-    // Simulación mes a mes: da el desglose anual real (capital vs. interés) y totales consistentes
     let saldo = capitalPrestado;
-    const porAnio: Record<number, { anio: number; capital: number; interes: number }> = {};
+    const porAnio: Record<number, { anio: number; capital: number; interes: number; saldo: number }> = {};
     let totalPagado = 0;
 
     for (let m = 1; m <= mesesTotal; m++) {
@@ -104,15 +102,18 @@ export default function SimuladorHipotecaPage() {
       totalPagado += capitalMes + interesMes;
 
       const anio = Math.ceil(m / 12);
-      if (!porAnio[anio]) porAnio[anio] = { anio, capital: 0, interes: 0 };
+      if (!porAnio[anio]) porAnio[anio] = { anio, capital: 0, interes: 0, saldo: 0 };
       porAnio[anio].capital += capitalMes;
       porAnio[anio].interes += interesMes;
+      porAnio[anio].saldo = saldo;
     }
 
     const datosPorAnio = Object.values(porAnio).map((d) => ({
       anio: d.anio,
       capital: Math.round(d.capital),
       interes: Math.round(d.interes),
+      cuota: Math.round(d.capital + d.interes),
+      saldo: Math.round(d.saldo),
     }));
 
     const totalIntereses = totalPagado - capitalPrestado;
@@ -161,7 +162,6 @@ export default function SimuladorHipotecaPage() {
           </p>
         </header>
 
-        {/* SELECTOR FIJO / VARIABLE / MIXTA */}
         <div className="inline-flex bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1 mb-4 w-full">
           <button type="button" onClick={() => setTipoHipoteca("fijo")}
             className={`flex-1 text-[10.5px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all ${tipoHipoteca === "fijo" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}>
@@ -279,62 +279,64 @@ export default function SimuladorHipotecaPage() {
           </div>
         )}
 
-        {/* GRÁFICO CON TOGGLE TOTAL / POR AÑO */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-              {vistaGrafico === "total" ? "Reparto del coste total" : "Capital vs. intereses por año"}
-            </p>
-            <div className="inline-flex bg-white border border-slate-200 rounded-lg p-0.5 gap-0.5">
-              <button onClick={() => setVistaGrafico("total")}
-                className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all ${vistaGrafico === "total" ? "bg-[#0B3A6E] text-white" : "text-slate-400"}`}>
-                Total
-              </button>
-              <button onClick={() => setVistaGrafico("anual")}
-                className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all ${vistaGrafico === "anual" ? "bg-[#0B3A6E] text-white" : "text-slate-400"}`}>
-                Por año
-              </button>
-            </div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Reparto del coste total</p>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={datosPie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
+                  {datosPie.map((d, i) => <Cell key={i} fill={d.color} />)}
+                </Pie>
+                <Tooltip formatter={(value: any) => `${formato(Number(value))}€`} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
+          <div className="flex justify-center gap-4 mt-2">
+            {datosPie.map((d) => (
+              <div key={d.name} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+                <span className="text-[10px] font-bold text-slate-600">{d.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {vistaGrafico === "total" ? (
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={datosPie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
-                    {datosPie.map((d, i) => <Cell key={i} fill={d.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(value: any) => `${formato(Number(value))}€`} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={resultado.datosPorAnio} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                  <XAxis dataKey="anio" tick={{ fontSize: 9, fontWeight: 700 }} tickFormatter={(v) => `A${v}`} />
-                  <YAxis hide />
-                  <Tooltip
-                    formatter={(value: any, name: any) => [`${formato(Number(value))}€`, name === "capital" ? "Capital" : "Intereses"]}
-                    labelFormatter={(l) => `Año ${l}`}
-                  />
-                  <Bar dataKey="capital" stackId="a" fill="#0B3A6E" />
-                  <Bar dataKey="interes" stackId="a" fill="#B45309" />
-                </BarChart>
-              </ResponsiveContainer>
+        {/* CUADRO DE AMORTIZACIÓN (DESPLEGABLE) */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden mb-4">
+          <button
+            onClick={() => setMostrarAmortizacion(!mostrarAmortizacion)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left"
+          >
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">Cuadro de amortización</span>
+            <ChevronDown size={14} className={`text-slate-400 transition-transform ${mostrarAmortizacion ? "rotate-180" : ""}`} />
+          </button>
+
+          {mostrarAmortizacion && (
+            <div className="border-t border-slate-200 max-h-64 overflow-y-auto">
+              <table className="w-full text-[10px]">
+                <thead className="sticky top-0 bg-slate-100">
+                  <tr className="text-left text-slate-500 font-black uppercase">
+                    <th className="px-3 py-2">Año</th>
+                    <th className="px-3 py-2 text-right">Cuota</th>
+                    <th className="px-3 py-2 text-right">Capital</th>
+                    <th className="px-3 py-2 text-right">Intereses</th>
+                    <th className="px-3 py-2 text-right">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resultado.datosPorAnio.map((d) => (
+                    <tr key={d.anio} className="border-t border-slate-100">
+                      <td className="px-3 py-1.5 font-bold text-slate-700">{d.anio}</td>
+                      <td className="px-3 py-1.5 text-right">{formato(d.cuota)}€</td>
+                      <td className="px-3 py-1.5 text-right text-[#0B3A6E] font-bold">{formato(d.capital)}€</td>
+                      <td className="px-3 py-1.5 text-right text-amber-700">{formato(d.interes)}€</td>
+                      <td className="px-3 py-1.5 text-right text-slate-500">{formato(d.saldo)}€</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
-
-          <div className="flex justify-center gap-4 mt-2">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#0B3A6E]" />
-              <span className="text-[10px] font-bold text-slate-600">Capital</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-700" />
-              <span className="text-[10px] font-bold text-slate-600">Intereses</span>
-            </div>
-          </div>
         </div>
 
         <div className={`grid gap-2.5 mb-4 ${resultado.entrada > 0 ? "grid-cols-3" : "grid-cols-2"}`}>

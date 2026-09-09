@@ -16,6 +16,12 @@ interface SegmentoGrafico {
   color: string;
 }
 
+interface TablaGenerica {
+  titulo: string;
+  columnas: string[];
+  filas: (string | number)[][];
+}
+
 interface ConfigPdf {
   tituloDocumento: string;
   subtitulo: string;
@@ -24,6 +30,7 @@ interface ConfigPdf {
   metricasDestacadas: MetricaPdf[];
   graficoDistribucion?: SegmentoGrafico[];
   tituloGrafico?: string;
+  tabla?: TablaGenerica;
   secciones: SeccionPdf[];
   nombreArchivo: string;
 }
@@ -65,6 +72,14 @@ function dibujarLogoVectorial(doc: jsPDF) {
   doc.text("Tu dinero, con dirección.", 32, 27);
 }
 
+function hexARgb(hex: string): [number, number, number] {
+  const limpio = hex.replace("#", "");
+  const r = parseInt(limpio.substring(0, 2), 16);
+  const g = parseInt(limpio.substring(2, 4), 16);
+  const b = parseInt(limpio.substring(4, 6), 16);
+  return [r, g, b];
+}
+
 function dibujarGraficoDistribucion(doc: jsPDF, segmentos: SegmentoGrafico[], titulo: string, yInicial: number): number {
   const anchoPagina = 210;
   const anchoBarra = anchoPagina - 30;
@@ -104,12 +119,69 @@ function dibujarGraficoDistribucion(doc: jsPDF, segmentos: SegmentoGrafico[], ti
   return y + 4;
 }
 
-function hexARgb(hex: string): [number, number, number] {
-  const limpio = hex.replace("#", "");
-  const r = parseInt(limpio.substring(0, 2), 16);
-  const g = parseInt(limpio.substring(2, 4), 16);
-  const b = parseInt(limpio.substring(4, 6), 16);
-  return [r, g, b];
+function dibujarTablaGenerica(doc: jsPDF, tabla: TablaGenerica, yInicial: number): number {
+  const anchoPagina = 210;
+  const margenIzq = 15;
+  const anchoTabla = anchoPagina - 30;
+  const nCols = tabla.columnas.length;
+  const anchoCol = anchoTabla / nCols;
+
+  let y = yInicial;
+
+  const dibujarCabecera = () => {
+    doc.setFillColor(11, 58, 110);
+    doc.rect(margenIzq, y, anchoTabla, 8, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    tabla.columnas.forEach((h, i) => {
+      const x = margenIzq + i * anchoCol;
+      if (i === 0) {
+        doc.text(h, x + 2, y + 5.5);
+      } else {
+        doc.text(h, x + anchoCol - 2, y + 5.5, { align: "right" });
+      }
+    });
+    y += 8;
+  };
+
+  doc.setTextColor(11, 58, 110);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(tabla.titulo, margenIzq, y);
+  y += 6;
+
+  dibujarCabecera();
+
+  tabla.filas.forEach((fila, idx) => {
+    if (y > 280) {
+      doc.addPage();
+      y = 20;
+      dibujarCabecera();
+    }
+
+    if (idx % 2 === 1) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(margenIzq, y, anchoTabla, 7, "F");
+    }
+
+    doc.setTextColor(51, 65, 85);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+
+    fila.forEach((valor, i) => {
+      const x = margenIzq + i * anchoCol;
+      const texto = String(valor);
+      if (i === 0) {
+        doc.text(texto, x + 2, y + 5);
+      } else {
+        doc.text(texto, x + anchoCol - 2, y + 5, { align: "right" });
+      }
+    });
+    y += 7;
+  });
+
+  return y + 6;
 }
 
 async function construirDocumento(config: ConfigPdf): Promise<jsPDF> {
@@ -187,15 +259,23 @@ async function construirDocumento(config: ConfigPdf): Promise<jsPDF> {
   }
 
   if (config.graficoDistribucion && config.graficoDistribucion.length > 0) {
-    if (y > 230) {
+    if (y > 210) {
       doc.addPage();
       y = 20;
     }
     y = dibujarGraficoDistribucion(doc, config.graficoDistribucion, config.tituloGrafico || "Distribución", y);
   }
 
+  if (config.tabla && config.tabla.filas.length > 0) {
+    if (y > 220) {
+      doc.addPage();
+      y = 20;
+    }
+    y = dibujarTablaGenerica(doc, config.tabla, y);
+  }
+
   config.secciones.forEach((s) => {
-    if (y > 250) {
+    if (y > 245) {
       doc.addPage();
       y = 20;
     }
@@ -213,16 +293,21 @@ async function construirDocumento(config: ConfigPdf): Promise<jsPDF> {
     y += lineas.length * 5 + 8;
   });
 
-  if (y > 250) {
+  if (y > 240) {
     doc.addPage();
     y = 20;
   }
+  const alturaCta = 30;
   doc.setFillColor(31, 161, 135);
-  doc.roundedRect(15, y, anchoPagina - 30, 20, 2, 2, "F");
+  doc.roundedRect(15, y, anchoPagina - 30, alturaCta, 3, 3, "F");
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("¿Quieres profundizar? Regístrate en MoneyMap", 20, y + 12);
+  doc.text("¿Quieres profundizar más sobre tu situación", 20, y + 11);
+  doc.text("financiera y aprender de finanzas?", 20, y + 17);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text("hola.moneymap@gmail.com   ·   www.moneymap.es", 20, y + 25);
 
   return doc;
 }

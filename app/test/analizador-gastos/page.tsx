@@ -3,9 +3,8 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Upload, TrendingUp, Mail, ArrowRight, CheckCircle2, FileDown } from "lucide-react";
+import { Upload, TrendingUp, Mail, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useUtmParams } from "@/lib/useUtmParams";
-import { generarPdfResultado } from "@/lib/generarPdfResultado";
 
 interface Resultado {
   ingresosTotales: number;
@@ -85,41 +84,6 @@ function AnalizadorContenido() {
     } finally {
       setEnviando(false);
     }
-  };
-
-  const descargarPdf = async () => {
-    if (!resultado) return;
-    await generarPdfResultado({
-      tituloDocumento: "Análisis Gratuito de Gastos",
-      subtitulo: `Resumen de tus ${resultado.movimientosAnalizados} movimientos analizados (versión de prueba, máx. ${resultado.limiteAplicado}).`,
-      nombreCliente: nombre || undefined,
-      metricasDestacadas: [
-        { etiqueta: "Ingresos", valor: `${resultado.ingresosTotales.toLocaleString("es-ES")}€` },
-        { etiqueta: "Gastos", valor: `${resultado.gastosTotales.toLocaleString("es-ES")}€` },
-        { etiqueta: "Ahorro", valor: `${resultado.ahorroNeto.toLocaleString("es-ES")}€` },
-      ],
-      secciones: [
-        {
-          titulo: "Tasa de ahorro",
-          contenido: `Tu tasa de ahorro estimada es del ${resultado.tasaAhorro}%. ${
-            resultado.tasaAhorro < 10
-              ? "Está por debajo del 10-20% recomendado — hay margen de mejora."
-              : "Está en un rango saludable, ¡sigue así!"
-          }`,
-        },
-        {
-          titulo: "En qué se va tu dinero",
-          contenido: resultado.topCategorias
-            .map((c, i) => `${i + 1}. ${c.categoria}: ${c.importe.toLocaleString("es-ES")}€`)
-            .join("\n"),
-        },
-        {
-          titulo: "Nota",
-          contenido: "Este es un análisis gratuito y limitado. MoneyMap analiza automáticamente todos tus movimientos, clasifica gastos fijos vs. variables, y traza una ruta financiera personalizada junto a un asesor.",
-        },
-      ],
-      nombreArchivo: "moneymap-analisis-gastos.pdf",
-    });
   };
 
   return (
@@ -234,18 +198,13 @@ function AnalizadorContenido() {
               </div>
             </div>
 
-            <button onClick={descargarPdf}
-              className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl p-3 text-xs font-black uppercase tracking-wider transition-all">
-              <FileDown size={14} /> Descargar informe en PDF
-            </button>
-
-            <div className="bg-[#1FA187]/10 border border-[#1FA187]/30 rounded-2xl p-5 text-center">
-              <CheckCircle2 size={20} className="text-[#1FA187] mx-auto mb-2" />
-              <p className="text-sm font-black text-slate-800 mb-1">Esto es solo el 1%</p>
-              <p className="text-[11px] text-slate-500 font-medium mb-3">
-                MoneyMap clasifica automáticamente todos tus movimientos cada mes, sin límite, y traza contigo una ruta financiera real.
+          <div className="bg-[#0B3A6E] rounded-2xl p-5 text-center shadow-md">
+              <Sparkles size={20} className="text-[#1FA187] mx-auto mb-2" />
+              <p className="text-sm font-black text-white mb-1">Esto lo ha hecho una IA en 30 segundos</p>
+              <p className="text-[11px] text-white/70 font-medium mb-3 leading-relaxed">
+                Con MoneyMap, esa misma IA analiza automáticamente <strong className="text-white">todos</strong> tus movimientos cada mes, sin límite, y profundiza contigo para entender por qué ahorras (o no) y cómo alcanzar tus objetivos reales.
               </p>
-              <Link href="/" className="inline-flex items-center gap-1.5 bg-[#0B3A6E] hover:bg-[#11498a] text-white text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl transition-all">
+              <Link href="/" className="inline-flex items-center gap-1.5 bg-[#1FA187] hover:bg-[#198771] text-white text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl transition-all">
                 Conocer MoneyMap <ArrowRight size={14} />
               </Link>
             </div>

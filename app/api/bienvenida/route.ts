@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { generarFacturaPDF, calcularValidoHasta } from './facturas';
+import { generarJustificantePDF, calcularValidoHasta } from './facturas';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -20,11 +20,10 @@ export async function POST(request: Request) {
     const ahora = new Date();
     const clienteNombre = `${nombre} ${apellido}`;
 
- const factura = await generarFacturaPDF({
+    const justificante = await generarJustificantePDF({
       numero: `MM-${numeroBase}-${esAnual ? 'A' : 'M'}`,
       concepto: esAnual ? 'Suscripción anual MoneyMap' : 'Suscripción mensual MoneyMap',
-      importe: esAnual ? 120 : 15,
-      codigoDescuento: esAnual ? '#ANUAL' : undefined,
+      importe: esAnual ? 99.99 : 8.99,
       clienteNombre,
       fechaEmision: ahora,
       validoHasta: calcularValidoHasta(ahora, esAnual ? 'anual' : 'mensual'),
@@ -35,9 +34,9 @@ export async function POST(request: Request) {
       from: 'MoneyMap <hola@moneymap.es>',
       to: [email],
       subject: '¡Bienvenido a MoneyMap! No te vas a arrepentir 🎉',
-      html: plantillaBienvenida({ nombre, apellido, fechaNacimiento }),
+      html: plantillaBienvenida({ nombre, apellido, fechaNacimiento, esAnual }),
       attachments: [
-        { filename: `factura-${esAnual ? 'anual' : 'mensual'}-moneymap.pdf`, content: Buffer.from(factura).toString('base64') },
+        { filename: `justificante-${esAnual ? 'anual' : 'mensual'}-moneymap.pdf`, content: Buffer.from(justificante).toString('base64') },
         { filename: 'logo.png', content: logoBuffer.toString('base64'), contentId: 'logo-moneymap' },
       ],
     });
@@ -52,7 +51,7 @@ export async function POST(request: Request) {
   }
 }
 
-function plantillaBienvenida({ nombre, apellido, fechaNacimiento }: { nombre: string; apellido: string; fechaNacimiento: string }) {
+function plantillaBienvenida({ nombre, apellido, fechaNacimiento, esAnual }: { nombre: string; apellido: string; fechaNacimiento: string; esAnual: boolean }) {
   const fechaNacFormateada = fechaNacimiento
     ? new Date(fechaNacimiento).toLocaleDateString('es-ES')
     : '—';
@@ -109,11 +108,22 @@ function plantillaBienvenida({ nombre, apellido, fechaNacimiento }: { nombre: st
                   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
                     <tr>
                       <td style="padding:24px;">
-                        <p style="color:#0B3A6E;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 16px 0;">Formas de pago</p>
-                        <p style="color:#334155;font-size:13px;margin:0 0 4px 0;"><strong>Transferencia (IBAN):</strong></p>
-                        <p style="color:#0B3A6E;font-size:14px;font-family:monospace;margin:0 0 16px 0;">ES00 0000 0000 0000 0000 0000</p>
-                        <p style="color:#334155;font-size:13px;margin:0 0 4px 0;"><strong>PayPal:</strong></p>
-                        <p style="color:#0B3A6E;font-size:14px;margin:0;">PayPal.me/MoneyMapFintech</p>
+                        <p style="color:#0B3A6E;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 16px 0;">Tu plan: ${esAnual ? 'Anual — 99,99€/año' : 'Mensual — 8,99€/mes'}</p>
+                        <p style="color:#334155;font-size:13px;margin:0 0 16px 0;">Elige cómo prefieres pagar:</p>
+
+                        <table cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td align="center" style="padding-bottom:16px;">
+                              <a href="https://www.moneymap.es/pago" style="background-color:#1FA187;color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:14px 28px;border-radius:10px;display:inline-block;">Suscribirme ahora con PayPal</a>
+                            </td>
+                          </tr>
+                        </table>
+
+                        <p style="color:#94a3b8;font-size:11px;margin:0 0 8px 0;">— o si prefieres transferencia bancaria —</p>
+                        <p style="color:#334155;font-size:13px;margin:0 0 4px 0;"><strong>IBAN:</strong> ES0500810291210006602975</p>
+                        <p style="color:#334155;font-size:13px;margin:0 0 4px 0;"><strong>Titular:</strong> David Tarín</p>
+                        <p style="color:#334155;font-size:13px;margin:0 0 4px 0;"><strong>Concepto:</strong> MoneyMap - ${nombre}</p>
+                        <p style="color:#334155;font-size:13px;margin:0;"><strong>Importe:</strong> ${esAnual ? '99,99€' : '8,99€'}</p>
                       </td>
                     </tr>
                   </table>
@@ -122,8 +132,8 @@ function plantillaBienvenida({ nombre, apellido, fechaNacimiento }: { nombre: st
 
               <tr>
                 <td style="padding:0 40px 24px 40px;">
-                  <p style="color:#64748b;font-size:12px;margin:0 0 12px 0;">Te adjuntamos la factura de la suscripción mensual y, por si te interesa ahorrar, la factura del plan anual con el código de descuento <strong style="color:#1FA187;">#ANUAL</strong> (120€/año).</p>
-                  <p style="color:#64748b;font-size:12px;margin:0;">En cuanto identifiquemos tu cobro, te daremos de alta en la aplicación en <strong style="color:#0B3A6E;">menos de 24 horas</strong>.</p>
+                  <p style="color:#64748b;font-size:12px;margin:0 0 12px 0;">Te adjuntamos un justificante de pago con los datos de tu suscripción — guárdalo para tu control personal.</p>
+                  <p style="color:#64748b;font-size:12px;margin:0;">Si pagas por transferencia, escríbenos a <a href="mailto:hola.moneymap@gmail.com" style="color:#0B3A6E;">hola.moneymap@gmail.com</a> indicando tu nombre. En cuanto identifiquemos tu pago, te daremos de alta en la aplicación en <strong style="color:#0B3A6E;">menos de 24 horas</strong>.</p>
                 </td>
               </tr>
 

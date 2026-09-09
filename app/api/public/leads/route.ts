@@ -4,7 +4,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const ORIGENES_VALIDOS = ["quiz", "perfil_inversor", "hipoteca"];
+const ORIGENES_VALIDOS = ["quiz", "perfil_inversor", "hipoteca", "analizador_gastos", "proyeccion"];
 
 function esEmailValido(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

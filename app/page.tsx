@@ -200,13 +200,6 @@ export default function LandingPage() {
             </div>
 
             <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              <Link href="/test/analizador-gastos" className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-3.5 transition-all text-center">
-                <TrendingUp size={20} className="text-[#1FA187]" />
-                <span className="text-[10px] font-black uppercase tracking-wide text-white leading-tight">
-                  Analiza tus gastos
-                </span>
-              </Link>
-
               <Link href="/test/hipoteca" className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-3.5 transition-all text-center">
                 <Home size={20} className="text-[#1FA187]" />
                 <span className="text-[10px] font-black uppercase tracking-wide text-white leading-tight">
@@ -234,10 +227,16 @@ export default function LandingPage() {
                   Proyecta tu ahorro
                 </span>
               </Link>
+              <Link href="/test/analizador-gastos" className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-2xl p-3.5 transition-all text-center">
+                <TrendingUp size={20} className="text-[#1FA187]" />
+                <span className="text-[10px] font-black uppercase tracking-wide text-white leading-tight">
+                  Analiza tus gastos
+                </span>
+              </Link>             
 
               <div className="flex flex-col items-center justify-center gap-1 bg-[#1FA187]/15 border border-[#1FA187]/30 rounded-2xl p-3.5 text-center">
                 <span className="text-[10px] font-black uppercase tracking-wide text-[#1FA187] leading-tight">
-                  + Mucho más
+                  Mucho más...
                 </span>
                 <span className="text-[9px] text-white/50 font-medium leading-tight">
                   dentro de MoneyMap

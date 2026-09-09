@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Users, Sparkles, Target, Home, Mail, TrendingUp, LineChart } from "lucide-react";
+import { ArrowLeft, Users, Sparkles, Target, Home, Mail, TrendingUp, LineChart, Trash2, Send } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -34,6 +34,13 @@ export default function AdminLeadsPage() {
   const [autorizado, setAutorizado] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filtro, setFiltro] = useState<string>("todos");
+  const [procesando, setProcesando] = useState<string | null>(null);
+  const [mensajeExito, setMensajeExito] = useState<string | null>(null);
+
+  const obtenerToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  };
 
   useEffect(() => {
     async function validarAdmin() {
@@ -47,17 +54,69 @@ export default function AdminLeadsPage() {
     validarAdmin();
   }, [router]);
 
+  const cargarLeads = async () => {
+    const token = await obtenerToken();
+    if (!token) return;
+    const response = await fetch("/api/admin/leads/list", { headers: { Authorization: `Bearer ${token}` } });
+    const data = await response.json();
+    setLeads(data.leads ?? []);
+  };
+
   useEffect(() => {
-    async function cargarLeads() {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) return;
-      const response = await fetch("/api/admin/leads/list", { headers: { Authorization: `Bearer ${token}` } });
-      const data = await response.json();
-      setLeads(data.leads ?? []);
-    }
     if (autorizado) cargarLeads();
   }, [autorizado]);
+
+  useEffect(() => {
+    if (!mensajeExito) return;
+    const t = setTimeout(() => setMensajeExito(null), 3000);
+    return () => clearTimeout(t);
+  }, [mensajeExito]);
+
+  const eliminarLead = async (lead: Lead) => {
+    if (!confirm(`¿Eliminar el lead de ${lead.email}? Esta acción no se puede deshacer.`)) return;
+
+    setProcesando(lead.id);
+    try {
+      const token = await obtenerToken();
+      if (!token) return;
+      const response = await fetch("/api/admin/leads/eliminar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ leadId: lead.id }),
+      });
+      if (!response.ok) throw new Error("No se pudo eliminar.");
+      setLeads((prev) => prev.filter((l) => l.id !== lead.id));
+      setMensajeExito("Lead eliminado.");
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo eliminar el lead.");
+    } finally {
+      setProcesando(null);
+    }
+  };
+
+  const enviarSeguimiento = async (lead: Lead) => {
+    if (!confirm(`¿Enviar email comercial de MoneyMap a ${lead.email}?`)) return;
+
+    setProcesando(lead.id);
+    try {
+      const token = await obtenerToken();
+      if (!token) return;
+      const response = await fetch("/api/admin/leads/enviar-seguimiento", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email: lead.email, nombre: lead.nombre }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudo enviar.");
+      setMensajeExito(`Email enviado a ${lead.email}.`);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "No se pudo enviar el email.");
+    } finally {
+      setProcesando(null);
+    }
+  };
 
   if (validando) {
     return <div className="w-full min-h-screen bg-white flex items-center justify-center"><p className="text-sm font-bold text-slate-500">Validando acceso...</p></div>;
@@ -75,12 +134,18 @@ export default function AdminLeadsPage() {
         <h1 className="text-xl font-black text-[#0B3A6E] tracking-tight uppercase flex items-center gap-2">
           <Users size={20} /> Leads captados ({leads.length})
         </h1>
-        <p className="text-slate-500 text-xs mt-0.5">Emails capturados desde las herramientas públicas (Quiz, Perfilador, Simulador de hipoteca).</p>
+        <p className="text-slate-500 text-xs mt-0.5">Emails capturados desde las herramientas públicas (Quiz, Perfilador, Simulador de hipoteca, Análisis de gastos, Proyección).</p>
       </header>
+
+      {mensajeExito && (
+        <div className="mb-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl px-3 py-2">
+          {mensajeExito}
+        </div>
+      )}
 
       <div className="flex gap-2 mb-4 flex-wrap">
         {["todos", "quiz", "perfil_inversor", "hipoteca", "analizador_gastos", "proyeccion"].map((f) => (
-            <button
+          <button
             key={f}
             onClick={() => setFiltro(f)}
             className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border transition-all ${
@@ -99,6 +164,7 @@ export default function AdminLeadsPage() {
           leadsFiltrados.map((lead) => {
             const info = INFO_ORIGEN[lead.origen];
             const Icono = info?.icono ?? Mail;
+            const ocupado = procesando === lead.id;
             return (
               <div key={lead.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3">
                 <div className={`p-2 rounded-lg shrink-0 ${info?.color ?? "bg-slate-100 text-slate-500"}`}>
@@ -106,12 +172,31 @@ export default function AdminLeadsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-black text-slate-800 truncate">{lead.email}</p>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] text-slate-400 truncate">
                     {lead.nombre ? `${lead.nombre} · ` : ""}{info?.label ?? lead.origen}
                     {lead.utm_source ? ` · ${lead.utm_source}` : ""}
                   </p>
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium shrink-0">{formatearFecha(lead.created_at)}</span>
+                <span className="text-[10px] text-slate-400 font-medium shrink-0 hidden sm:block">{formatearFecha(lead.created_at)}</span>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => enviarSeguimiento(lead)}
+                    disabled={ocupado}
+                    title="Enviar email comercial"
+                    className="p-2 rounded-lg bg-[#1FA187]/10 text-[#1FA187] hover:bg-[#1FA187]/20 disabled:opacity-50 transition-all"
+                  >
+                    <Send size={13} />
+                  </button>
+                  <button
+                    onClick={() => eliminarLead(lead)}
+                    disabled={ocupado}
+                    title="Eliminar lead"
+                    className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 disabled:opacity-50 transition-all"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             );
           })

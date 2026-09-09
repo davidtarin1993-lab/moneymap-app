@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { LineChart, Mail, ArrowRight, CheckCircle2, FileDown } from "lucide-react";
+import { LineChart as LineChartIcon, Mail, ArrowRight, CheckCircle2, ChevronDown } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useUtmParams } from "@/lib/useUtmParams";
-import { generarPdfResultado } from "@/lib/generarPdfResultado";
+import { generarPdfBase64 } from "@/lib/generarPdfResultado";
 
 function ProyeccionContenido() {
   const { utmSource, utmMedium, utmCampaign } = useUtmParams();
@@ -18,16 +19,19 @@ function ProyeccionContenido() {
   const [anios, setAnios] = useState<number>(10);
   const [metaFinanciera, setMetaFinanciera] = useState<number>(50000);
 
-  const [capitalFinal, setCapitalFinal] = useState<number>(0);
-  const [totalAportado, setTotalAportado] = useState<number>(0);
-  const [interesesGenerados, setInteresesGenerados] = useState<number>(0);
-  const [ahorroNecesario, setAhorroNecesario] = useState<number>(0);
-  const [historicoAnual, setHistoricoAnual] = useState<Array<{ anio: number; aportado: number; interes: number; total: number }>>([]);
+  const [mostrarTabla, setMostrarTabla] = useState(false);
 
   const [email, setEmail] = useState("");
   const [nombre, setNombre] = useState("");
   const [emailEnviado, setEmailEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+
+  const [capitalFinal, setCapitalFinal] = useState<number>(0);
+  const [totalAportado, setTotalAportado] = useState<number>(0);
+  const [interesesGenerados, setInteresesGenerados] = useState<number>(0);
+  const [ahorroNecesario, setAhorroNecesario] = useState<number>(0);
+  const [historicoAnual, setHistoricoAnual] = useState<Array<{ anio: number; aportado: number; interes: number; total: number }>>([]);
 
   useEffect(() => {
     const tasaMensual = (interesAnual / 100) / 12;
@@ -96,13 +100,77 @@ function ProyeccionContenido() {
     }
   }, [inicial, ahorroMensual, interesAnual, anios, metaFinanciera, modo]);
 
-  const valorMaximoGrafico = historicoAnual.length > 0 ? Math.max(...historicoAnual.map((d) => d.total)) : 1;
+  const formato = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 0 });
 
-  const handleEnviarEmail = async (e: React.FormEvent) => {
+  const handleEnviarPdf = async (e: React.FormEvent) => {
     e.preventDefault();
     setEnviando(true);
+    setErrorEnvio(null);
+
     try {
-      const response = await fetch("/api/public/leads", {
+      const metricas = modo === "proyeccion"
+        ? [
+            { etiqueta: "Capital final", valor: `${formato(capitalFinal)}€` },
+            { etiqueta: "Aportado", valor: `${formato(totalAportado)}€` },
+            { etiqueta: "Intereses", valor: `+${formato(interesesGenerados)}€` },
+          ]
+        : [
+            { etiqueta: "Ahorro necesario", valor: `${formato(ahorroNecesario)}€/mes` },
+            { etiqueta: "Capital final", valor: `${formato(capitalFinal)}€` },
+            { etiqueta: "Intereses", valor: `+${formato(interesesGenerados)}€` },
+          ];
+
+      const pdfBase64 = await generarPdfBase64({
+        tituloDocumento: modo === "proyeccion" ? "Tu Proyección de Ahorro" : "Tu Plan hacia tu Objetivo",
+        subtitulo:
+          modo === "proyeccion"
+            ? `Proyección a ${anios} años con ${ahorroMensual.toLocaleString("es-ES")}€/mes y ${interesAnual}% de interés anual estimado.`
+            : `Plan para alcanzar ${metaFinanciera.toLocaleString("es-ES")}€ en ${anios} años.`,
+        nombreCliente: nombre || undefined,
+        emailCliente: email,
+        metricasDestacadas: metricas,
+        tabla: {
+          titulo: "Evolución año a año",
+          columnas: ["Año", "Aportado", "Intereses", "Total"],
+          filas: historicoAnual.map((d) => [
+            d.anio,
+            `${formato(d.aportado)}€`,
+            `${formato(d.interes)}€`,
+            `${formato(d.total)}€`,
+          ]),
+        },
+        secciones: [
+          {
+            titulo: "Parámetros usados",
+            contenido: `Inversión inicial: ${inicial.toLocaleString("es-ES")}€\nInterés anual estimado: ${interesAnual}%\nHorizonte temporal: ${anios} años${
+              modo === "objetivo" ? `\nMeta: ${metaFinanciera.toLocaleString("es-ES")}€` : ""
+            }`,
+          },
+          {
+            titulo: "Nota",
+            contenido: "Esta es una proyección orientativa basada en una rentabilidad constante estimada; los mercados reales son variables.",
+          },
+        ],
+        nombreArchivo: "moneymap-proyeccion-patrimonio.pdf",
+      });
+
+      const response = await fetch("/api/public/enviar-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          nombre,
+          tipoDocumento: "proyeccion",
+          asunto: "Tu proyección de patrimonio — MoneyMap",
+          pdfBase64,
+          nombreArchivo: "moneymap-proyeccion-patrimonio.pdf",
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudo enviar el documento.");
+
+      fetch("/api/public/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,51 +182,14 @@ function ProyeccionContenido() {
           utmMedium,
           utmCampaign,
         }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
+      }).catch(() => {});
+
       setEmailEnviado(true);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setErrorEnvio(err.message || "No se pudo enviar el documento. Inténtalo de nuevo.");
     } finally {
       setEnviando(false);
     }
-  };
-
-  const descargarPdf = async () => {
-    await generarPdfResultado({
-      tituloDocumento: modo === "proyeccion" ? "Tu Proyección de Ahorro" : "Tu Plan hacia tu Objetivo",
-      subtitulo:
-        modo === "proyeccion"
-          ? `Proyección a ${anios} años con ${ahorroMensual.toLocaleString("es-ES")}€/mes y ${interesAnual}% de interés anual estimado.`
-          : `Plan para alcanzar ${metaFinanciera.toLocaleString("es-ES")}€ en ${anios} años.`,
-      nombreCliente: nombre || undefined,
-      metricasDestacadas:
-        modo === "proyeccion"
-          ? [
-              { etiqueta: "Capital final", valor: `${capitalFinal.toLocaleString("es-ES")}€` },
-              { etiqueta: "Aportado", valor: `${totalAportado.toLocaleString("es-ES")}€` },
-              { etiqueta: "Intereses", valor: `+${interesesGenerados.toLocaleString("es-ES")}€` },
-            ]
-          : [
-              { etiqueta: "Ahorro necesario", valor: `${ahorroNecesario.toLocaleString("es-ES")}€/mes` },
-              { etiqueta: "Capital final", valor: `${capitalFinal.toLocaleString("es-ES")}€` },
-              { etiqueta: "Intereses", valor: `+${interesesGenerados.toLocaleString("es-ES")}€` },
-            ],
-      secciones: [
-        {
-          titulo: "Parámetros usados",
-          contenido: `Inversión inicial: ${inicial.toLocaleString("es-ES")}€\nInterés anual estimado: ${interesAnual}%\nHorizonte temporal: ${anios} años${
-            modo === "objetivo" ? `\nMeta: ${metaFinanciera.toLocaleString("es-ES")}€` : ""
-          }`,
-        },
-        {
-          titulo: "Nota",
-          contenido: "Esta es una proyección orientativa basada en una rentabilidad constante estimada; los mercados reales son variables. MoneyMap te ayuda a trazar y hacer seguimiento real de tu ruta financiera junto a un asesor.",
-        },
-      ],
-      nombreArchivo: "moneymap-proyeccion-patrimonio.pdf",
-    });
   };
 
   return (
@@ -170,7 +201,7 @@ function ProyeccionContenido() {
 
         <header className="border-b border-slate-100 pb-5 mb-5 text-center">
           <div className="flex items-center justify-center gap-3">
-            <LineChart size={30} className="text-[#0B3A6E]" />
+            <LineChartIcon size={30} className="text-[#0B3A6E]" />
             <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Proyector de Patrimonio</h1>
           </div>
           <p className="mt-2 text-xs md:text-sm text-slate-500 max-w-md mx-auto font-medium leading-normal">
@@ -263,19 +294,20 @@ function ProyeccionContenido() {
               </div>
             </div>
 
-            <div className="h-32 flex items-end justify-between gap-1 px-1 bg-white/[0.03] rounded-xl overflow-x-auto">
-              {historicoAnual.map((d) => {
-                const pctA = (d.aportado / valorMaximoGrafico) * 100;
-                const pctI = (d.interes / valorMaximoGrafico) * 100;
-                return (
-                  <div key={d.anio} className="flex-1 min-w-[14px] max-w-[28px] flex flex-col items-center h-full justify-end">
-                    <div className="w-full flex flex-col justify-end rounded-t-sm overflow-hidden h-full">
-                      <div style={{ height: `${pctI}%` }} className="w-full bg-[#1FA187] opacity-80" />
-                      <div style={{ height: `${pctA}%` }} className="w-full bg-blue-500 opacity-90" />
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="h-40 bg-white/[0.03] rounded-xl p-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={historicoAnual} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <XAxis dataKey="anio" tick={{ fontSize: 9, fontWeight: 700, fill: "rgba(255,255,255,0.6)" }} tickFormatter={(v) => `A${v}`} />
+                  <YAxis hide />
+                  <Tooltip
+                    formatter={(value: any, name: any) => [`${formato(Number(value))}€`, name === "aportado" ? "Aportado" : "Intereses"]}
+                    labelFormatter={(l) => `Año ${l}`}
+                    contentStyle={{ fontSize: 11, borderRadius: 8 }}
+                  />
+                  <Bar dataKey="aportado" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="interes" stackId="a" fill="#1FA187" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
@@ -284,56 +316,86 @@ function ProyeccionContenido() {
           {modo === "objetivo" && (
             <div className="p-3 bg-violet-50 border border-violet-100 rounded-xl mb-3">
               <p className="text-[9px] font-bold text-violet-700 uppercase tracking-wider">Ahorro Requerido</p>
-              <p className="text-xl font-black text-violet-600 mt-0.5">{ahorroNecesario.toLocaleString("es-ES")} €/mes</p>
+              <p className="text-xl font-black text-violet-600 mt-0.5">{formato(ahorroNecesario)} €/mes</p>
             </div>
           )}
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Capital final estimado</p>
-          <p className="text-3xl font-black text-slate-900 mt-0.5">{capitalFinal.toLocaleString("es-ES")}€</p>
+          <p className="text-3xl font-black text-slate-900 mt-0.5">{formato(capitalFinal)}€</p>
 
           <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-200">
             <div>
               <p className="text-[8.5px] font-bold text-slate-400 uppercase">Capital propio</p>
-              <p className="text-sm font-black text-slate-800 mt-0.5">{totalAportado.toLocaleString("es-ES")}€</p>
+              <p className="text-sm font-black text-slate-800 mt-0.5">{formato(totalAportado)}€</p>
             </div>
             <div>
               <p className="text-[8.5px] font-bold text-slate-400 uppercase">Intereses</p>
-              <p className="text-sm font-black text-[#1FA187] mt-0.5">+{interesesGenerados.toLocaleString("es-ES")}€</p>
+              <p className="text-sm font-black text-[#1FA187] mt-0.5">+{formato(interesesGenerados)}€</p>
             </div>
           </div>
         </div>
 
-        <button
-          onClick={descargarPdf}
-          className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl p-3 text-xs font-black uppercase tracking-wider transition-all mb-4"
-        >
-          <FileDown size={14} /> Descargar proyección en PDF
-        </button>
+        {/* TABLA DE EVOLUCIÓN (DESPLEGABLE, GRATIS) */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden mb-4">
+          <button
+            onClick={() => setMostrarTabla(!mostrarTabla)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left"
+          >
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">Evolución año a año</span>
+            <ChevronDown size={14} className={`text-slate-400 transition-transform ${mostrarTabla ? "rotate-180" : ""}`} />
+          </button>
+
+          {mostrarTabla && (
+            <div className="border-t border-slate-200 max-h-64 overflow-y-auto">
+              <table className="w-full text-[10px]">
+                <thead className="sticky top-0 bg-slate-100">
+                  <tr className="text-left text-slate-500 font-black uppercase">
+                    <th className="px-3 py-2">Año</th>
+                    <th className="px-3 py-2 text-right">Aportado</th>
+                    <th className="px-3 py-2 text-right">Intereses</th>
+                    <th className="px-3 py-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historicoAnual.map((d) => (
+                    <tr key={d.anio} className="border-t border-slate-100">
+                      <td className="px-3 py-1.5 font-bold text-slate-700">{d.anio}</td>
+                      <td className="px-3 py-1.5 text-right text-blue-600">{formato(d.aportado)}€</td>
+                      <td className="px-3 py-1.5 text-right text-[#1FA187] font-bold">{formato(d.interes)}€</td>
+                      <td className="px-3 py-1.5 text-right text-slate-800 font-black">{formato(d.total)}€</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
         {!emailEnviado ? (
           <div className="bg-[#1FA187]/10 border border-[#1FA187]/30 rounded-2xl p-5">
             <div className="flex items-center gap-1.5 mb-2">
               <Mail size={14} className="text-[#1FA187]" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1FA187]">¿Quieres guardar esta simulación?</h3>
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#1FA187]">Recibe esta proyección en tu email</h3>
             </div>
             <p className="text-[11px] text-slate-600 font-medium mb-4">
-              Déjanos tu email y te la enviamos, junto con ideas para acelerar tu plan.
+              Te enviamos un PDF con todos estos datos, incluida la evolución año a año.
             </p>
-            <form onSubmit={handleEnviarEmail} className="space-y-2.5">
-              <input type="text" placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)}
+            <form onSubmit={handleEnviarPdf} className="space-y-2.5">
+              <input type="text" required placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)}
                 className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-[#1FA187] font-medium" />
               <input type="email" required placeholder="Tu correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-[#1FA187] font-medium" />
               <button type="submit" disabled={enviando}
                 className="w-full bg-[#1FA187] hover:bg-[#198771] disabled:opacity-60 text-white text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center justify-center gap-1.5 transition-all">
-                {enviando ? "Enviando..." : <>Enviarme esta simulación <ArrowRight size={14} /></>}
+                {enviando ? "Enviando..." : <>Enviarme el PDF <ArrowRight size={14} /></>}
               </button>
+              {errorEnvio && <p className="text-red-500 text-[10px] font-bold text-center">{errorEnvio}</p>}
             </form>
           </div>
         ) : (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-center">
             <CheckCircle2 size={20} className="text-emerald-600 mx-auto mb-2" />
-            <p className="text-xs font-black text-emerald-800">¡Listo! Te lo hemos guardado.</p>
-            <Link href="/" className="inline-flex items-center gap-1.5 mt-3 text-[#0B3A6E] text-xs font-black uppercase underline">
+            <p className="text-xs font-black text-emerald-800">¡Enviado! Revisa tu bandeja de entrada.</p>
+            <Link href="/" className="inline-flex items-center gap-1.5 mt-3 text-[#0B3A6E] text-[11px] font-black uppercase underline">
               Conocer MoneyMap <ArrowRight size={12} />
             </Link>
           </div>

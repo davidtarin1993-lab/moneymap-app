@@ -1,10 +1,9 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
-interface DatosFactura {
+interface DatosJustificante {
   numero: string;
   concepto: string;
   importe: number;
-  codigoDescuento?: string;
   clienteNombre: string;
   fechaEmision: Date;
   validoHasta: Date;
@@ -14,9 +13,9 @@ interface DatosFactura {
 const formatoFecha = (fecha: Date) =>
   fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-export async function generarFacturaPDF({
-  numero, concepto, importe, codigoDescuento, clienteNombre, fechaEmision, validoHasta, logoBytes,
-}: DatosFactura): Promise<Uint8Array> {
+export async function generarJustificantePDF({
+  numero, concepto, importe, clienteNombre, fechaEmision, validoHasta, logoBytes,
+}: DatosJustificante): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([420, 560]);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -35,7 +34,7 @@ export async function generarFacturaPDF({
   page.drawImage(logoImg, { x: marginX, y, width: logoDims.width, height: logoDims.height });
   y -= logoDims.height + 24;
 
-  page.drawText('Factura Simplificada', { x: marginX, y, size: 20, font: fontBold, color: negro });
+  page.drawText('Justificante de Pago', { x: marginX, y, size: 20, font: fontBold, color: negro });
   y -= 30;
 
   const filaCampo = (label: string, valor: string) => {
@@ -44,14 +43,9 @@ export async function generarFacturaPDF({
     y -= 18;
   };
 
-  //filaCampo('Nombre de la empresa emisora', 'MoneyMap Fintech, S.L.');
-  //filaCampo('CIF', 'TU-CIF-AQUI');           // <-- sustituye por tu CIF real
-  //filaCampo('Dirección', 'TU DIRECCIÓN FISCAL AQUÍ'); // <-- sustituye por tu dirección real
-  filaCampo('Emitida por', 'David Tarín');
-  filaCampo('DNI', '21008942Y');
-  
+  filaCampo('Emitido por', 'David Tarín — MoneyMap');
   y -= 8;
-  filaCampo('Nº de factura', numero);
+  filaCampo('Nº de referencia', numero);
   filaCampo('Fecha de emisión', formatoFecha(fechaEmision));
   filaCampo('Cliente', clienteNombre);
   filaCampo('Válido hasta', formatoFecha(validoHasta));
@@ -60,26 +54,27 @@ export async function generarFacturaPDF({
   page.drawLine({ start: { x: marginX, y }, end: { x: width - marginX, y }, thickness: 1, color: rgb(0.9, 0.92, 0.94) });
   y -= 24;
 
-  page.drawText('Descripción de la operación:', { x: marginX, y, size: 9, font: fontBold, color: gris });
-  page.drawText('Precio:', { x: width - marginX - 60, y, size: 9, font: fontBold, color: gris });
+  page.drawText('Descripción del servicio:', { x: marginX, y, size: 9, font: fontBold, color: gris });
+  page.drawText('Importe:', { x: width - marginX - 60, y, size: 9, font: fontBold, color: gris });
   y -= 18;
 
   page.drawText(concepto, { x: marginX, y, size: 10, font: fontRegular, color: negro });
   page.drawText(`${importe.toFixed(2)} €`, { x: width - marginX - 60, y, size: 10, font: fontRegular, color: negro });
-  y -= 24;
+  y -= 30;
 
-  if (codigoDescuento) {
-    page.drawText(`Código de descuento aplicado: ${codigoDescuento}`, { x: marginX, y, size: 9, font: fontRegular, color: verde });
-    y -= 24;
-  }
-
-  page.drawText('Tipo de IVA:', { x: marginX, y, size: 9, font: fontBold, color: gris });
-  y -= 16;
-  page.drawText('• 21% (incluido en el precio)', { x: marginX, y, size: 9, font: fontRegular, color: negro });
+  page.drawText(
+    'Este documento es un justificante informativo del pago realizado.',
+    { x: marginX, y, size: 8, font: fontRegular, color: gris }
+  );
+  y -= 12;
+  page.drawText(
+    'No tiene validez como factura fiscal ni incluye desglose de IVA.',
+    { x: marginX, y, size: 8, font: fontRegular, color: gris }
+  );
   y -= 30;
 
   page.drawRectangle({ x: marginX, y: y - 10, width: width - marginX * 2, height: 36, color: rgb(0.93, 0.98, 0.96) });
-  page.drawText('Total factura (IVA incluido)', { x: marginX + 10, y: y + 3, size: 10, font: fontBold, color: azul });
+  page.drawText('Total pagado', { x: marginX + 10, y: y + 3, size: 10, font: fontBold, color: azul });
   page.drawText(`${importe.toFixed(2)} €`, { x: width - marginX - 70, y: y + 3, size: 12, font: fontBold, color: verde });
 
   return pdfDoc.save();

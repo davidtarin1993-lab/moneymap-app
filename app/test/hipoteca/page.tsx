@@ -3,13 +3,12 @@
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Info, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { Home, Info, Mail, ArrowRight, CheckCircle2, ChevronDown } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useUtmParams } from "@/lib/useUtmParams";
 import { generarPdfBase64 } from "@/lib/generarPdfResultado";
 
 type TipoHipoteca = "fijo" | "variable" | "mixta";
-type VistaGrafico = "total" | "anual";
 
 function SimuladorHipotecaContenido() {
   const { utmSource, utmMedium, utmCampaign } = useUtmParams();
@@ -25,7 +24,7 @@ function SimuladorHipotecaContenido() {
   const [euriborActual, setEuriborActual] = useState("2.6");
   const [aniosFijoMixta, setAniosFijoMixta] = useState("5");
 
-  const [vistaGrafico, setVistaGrafico] = useState<VistaGrafico>("total");
+  const [mostrarAmortizacion, setMostrarAmortizacion] = useState(false);
 
   const [email, setEmail] = useState("");
   const [nombre, setNombre] = useState("");
@@ -83,9 +82,8 @@ function SimuladorHipotecaContenido() {
       }
     }
 
-    // Simulación mes a mes: da el desglose anual real y unos totales consistentes con el gráfico
     let saldo = capitalPrestado;
-    const porAnio: Record<number, { anio: number; capital: number; interes: number }> = {};
+    const porAnio: Record<number, { anio: number; capital: number; interes: number; saldo: number }> = {};
     let totalPagado = 0;
 
     for (let m = 1; m <= mesesTotal; m++) {
@@ -101,15 +99,18 @@ function SimuladorHipotecaContenido() {
       totalPagado += capitalMes + interesMes;
 
       const anio = Math.ceil(m / 12);
-      if (!porAnio[anio]) porAnio[anio] = { anio, capital: 0, interes: 0 };
+      if (!porAnio[anio]) porAnio[anio] = { anio, capital: 0, interes: 0, saldo: 0 };
       porAnio[anio].capital += capitalMes;
       porAnio[anio].interes += interesMes;
+      porAnio[anio].saldo = saldo;
     }
 
     const datosPorAnio = Object.values(porAnio).map((d) => ({
       anio: d.anio,
       capital: Math.round(d.capital),
       interes: Math.round(d.interes),
+      cuota: Math.round(d.capital + d.interes),
+      saldo: Math.round(d.saldo),
     }));
 
     const totalIntereses = totalPagado - capitalPrestado;
@@ -134,7 +135,6 @@ function SimuladorHipotecaContenido() {
   const formato = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 0 });
 
   const handleEnviarPdf = async (e: React.FormEvent) => {
-    
     e.preventDefault();
     setEnviando(true);
     setErrorEnvio(null);
@@ -165,6 +165,17 @@ function SimuladorHipotecaContenido() {
           { etiqueta: "Capital prestado", valor: resultado.capitalPrestado, color: "#0B3A6E" },
           { etiqueta: "Intereses totales", valor: Math.max(resultado.totalIntereses, 0), color: "#B45309" },
         ],
+        tabla: {
+          titulo: "Cuadro de amortización",
+          columnas: ["Año", "Cuota", "Capital", "Intereses", "Saldo"],
+          filas: resultado.datosPorAnio.map((d) => [
+            d.anio,
+            `${formato(d.cuota)}€`,
+            `${formato(d.capital)}€`,
+            `${formato(d.interes)}€`,
+            `${formato(d.saldo)}€`,
+          ]),
+        },
         secciones: [
           {
             titulo: "Desglose",
@@ -179,6 +190,7 @@ function SimuladorHipotecaContenido() {
         ],
         nombreArchivo: "moneymap-simulacion-hipoteca.pdf",
       });
+
       const response = await fetch("/api/public/enviar-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -195,7 +207,6 @@ function SimuladorHipotecaContenido() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "No se pudo enviar el documento.");
 
-      // También lo registramos como lead del funnel
       fetch("/api/public/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -352,62 +363,64 @@ function SimuladorHipotecaContenido() {
           </div>
         )}
 
-        {/* GRÁFICO CON TOGGLE */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-              {vistaGrafico === "total" ? "Reparto del coste total" : "Capital vs. intereses por año"}
-            </p>
-            <div className="inline-flex bg-white border border-slate-200 rounded-lg p-0.5 gap-0.5">
-              <button onClick={() => setVistaGrafico("total")}
-                className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all ${vistaGrafico === "total" ? "bg-[#0B3A6E] text-white" : "text-slate-400"}`}>
-                Total
-              </button>
-              <button onClick={() => setVistaGrafico("anual")}
-                className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all ${vistaGrafico === "anual" ? "bg-[#0B3A6E] text-white" : "text-slate-400"}`}>
-                Por año
-              </button>
-            </div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Reparto del coste total</p>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={datosPie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
+                  {datosPie.map((d, i) => <Cell key={i} fill={d.color} />)}
+                </Pie>
+                <Tooltip formatter={(value: any) => `${formato(Number(value))}€`} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
+          <div className="flex justify-center gap-4 mt-2">
+            {datosPie.map((d) => (
+              <div key={d.name} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+                <span className="text-[10px] font-bold text-slate-600">{d.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {vistaGrafico === "total" ? (
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={datosPie} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
-                    {datosPie.map((d, i) => <Cell key={i} fill={d.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(value: any) => `${formato(Number(value))}€`} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={resultado.datosPorAnio} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                  <XAxis dataKey="anio" tick={{ fontSize: 9, fontWeight: 700 }} tickFormatter={(v) => `A${v}`} />
-                  <YAxis hide />
-                  <Tooltip
-                    formatter={(value: any, name: any) => [`${formato(Number(value))}€`, name === "capital" ? "Capital" : "Intereses"]}
-                    labelFormatter={(l) => `Año ${l}`}
-                  />
-                  <Bar dataKey="capital" stackId="a" fill="#0B3A6E" />
-                  <Bar dataKey="interes" stackId="a" fill="#B45309" />
-                </BarChart>
-              </ResponsiveContainer>
+        {/* CUADRO DE AMORTIZACIÓN (DESPLEGABLE, GRATIS) */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden mb-4">
+          <button
+            onClick={() => setMostrarAmortizacion(!mostrarAmortizacion)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left"
+          >
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">Cuadro de amortización</span>
+            <ChevronDown size={14} className={`text-slate-400 transition-transform ${mostrarAmortizacion ? "rotate-180" : ""}`} />
+          </button>
+
+          {mostrarAmortizacion && (
+            <div className="border-t border-slate-200 max-h-64 overflow-y-auto">
+              <table className="w-full text-[10px]">
+                <thead className="sticky top-0 bg-slate-100">
+                  <tr className="text-left text-slate-500 font-black uppercase">
+                    <th className="px-3 py-2">Año</th>
+                    <th className="px-3 py-2 text-right">Cuota</th>
+                    <th className="px-3 py-2 text-right">Capital</th>
+                    <th className="px-3 py-2 text-right">Intereses</th>
+                    <th className="px-3 py-2 text-right">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resultado.datosPorAnio.map((d) => (
+                    <tr key={d.anio} className="border-t border-slate-100">
+                      <td className="px-3 py-1.5 font-bold text-slate-700">{d.anio}</td>
+                      <td className="px-3 py-1.5 text-right">{formato(d.cuota)}€</td>
+                      <td className="px-3 py-1.5 text-right text-[#0B3A6E] font-bold">{formato(d.capital)}€</td>
+                      <td className="px-3 py-1.5 text-right text-amber-700">{formato(d.interes)}€</td>
+                      <td className="px-3 py-1.5 text-right text-slate-500">{formato(d.saldo)}€</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
-
-          <div className="flex justify-center gap-4 mt-2">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#0B3A6E]" />
-              <span className="text-[10px] font-bold text-slate-600">Capital</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-700" />
-              <span className="text-[10px] font-bold text-slate-600">Intereses</span>
-            </div>
-          </div>
         </div>
 
         <div className={`grid gap-2.5 mb-4 ${resultado.entrada > 0 ? "grid-cols-3" : "grid-cols-2"}`}>
@@ -434,7 +447,6 @@ function SimuladorHipotecaContenido() {
           </p>
         </div>
 
-        {/* ENVÍO DEL PDF POR EMAIL */}
         {!emailEnviado ? (
           <div className="bg-[#1FA187]/10 border border-[#1FA187]/30 rounded-2xl p-5">
             <div className="flex items-center gap-1.5 mb-2">
@@ -442,7 +454,7 @@ function SimuladorHipotecaContenido() {
               <h3 className="text-xs font-black uppercase tracking-wider text-[#1FA187]">Recibe esta simulación en tu email</h3>
             </div>
             <p className="text-[11px] text-slate-600 font-medium mb-4">
-              Te enviamos un PDF con todos estos datos directamente a tu correo.
+              Te enviamos un PDF con todos estos datos, incluido el cuadro de amortización completo.
             </p>
             <form onSubmit={handleEnviarPdf} className="space-y-2.5">
               <input type="text" required placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)}
