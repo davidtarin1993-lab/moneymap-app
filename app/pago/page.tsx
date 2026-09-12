@@ -103,7 +103,7 @@ export default function PagoPage() {
                 onClick={() => cambiarPlan("mensual")}
                 className={`flex-1 text-xs font-black uppercase tracking-wider px-3 py-2.5 rounded-lg transition-all ${plan === "mensual" ? "bg-[#0B3A6E] text-white" : "text-slate-500"}`}
               >
-                Mensual — 8,99€
+                Mensual — 9,99€
               </button>
               <button
                 type="button"
@@ -145,7 +145,7 @@ export default function PagoPage() {
             ) : (
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
                 <p className="text-[11px] text-slate-500 font-medium mb-3 text-center">
-                  Plan {plan === "mensual" ? "mensual (8,99€/mes)" : "anual (99,99€/año)"} — {nombre}
+                  Plan {plan === "mensual" ? "mensual (9,99€/mes)" : "anual (99,99€/año)"} — {nombre}
                 </p>
                 <div ref={contenedorRef} />
                 <button

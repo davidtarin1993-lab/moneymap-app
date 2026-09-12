@@ -14,7 +14,7 @@ const CARACTERISTICAS = [
   "Sigue en tiempo real la cartera oficial de MoneyMap.",
 ];
 
-const PRECIO_MENSUAL = 8.99;
+const PRECIO_MENSUAL = 9.99;
 const PRECIO_ANUAL = 99.99;
 const EQUIVALENTE_MENSUAL_ANUAL = (PRECIO_ANUAL / 12).toFixed(2);
 const PORCENTAJE_AHORRO = Math.round(((PRECIO_MENSUAL * 12 - PRECIO_ANUAL) / (PRECIO_MENSUAL * 12)) * 100);
