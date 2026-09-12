@@ -18,8 +18,9 @@ const items = [
 
 export default function Navigation() {
   const pathname = usePathname();
-  if (pathname === "/" || pathname === "/login" || pathname.startsWith("/admin") || pathname.startsWith("/test")) return null;
-  return (
+  if (pathname === "/" || pathname === "/login" || pathname.startsWith("/admin") || pathname.startsWith("/test") || pathname.startsWith("/pago")) {
+    return null;
+  }  return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-between items-center bg-white/90 backdrop-blur-md border-t border-slate-200 p-1.5 pb-4 shadow-[0_-8px_30px_rgb(0,0,0,0.06)] w-full">
       {items.map((item) => {
         const Icon = item.icon;

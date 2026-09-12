@@ -306,7 +306,7 @@ export default function LandingPage() {
                 </div>
                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">¡Revisa tu correo!</h4>
                 <p className="text-[11px] text-slate-500 font-medium px-4">
-                  Te hemos enviado un email de bienvenida a <strong>{emailLead}</strong>. Si no lo ves en tu bandeja de entrada en unos minutos, revisa también la carpeta de spam o promociones.
+                  Te hemos enviado un email de bienvenida. Si no lo ves en tu bandeja de entrada en unos minutos, revisa también la carpeta de spam o promociones.
                 </p>
               </div>
             ) : (

@@ -5,7 +5,7 @@ import Script from "next/script";
 import Image from "next/image";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 
-const CLIENT_ID = "AWQ-BQDiGzq297vDN3uW9sjgWYY6rqPZNPbTZzkdyDoirwHuJTFS3VoeQYA7F9ZfKTj52yvPoBWg01ZG";
+const CLIENT_ID = "BAAzDhhLv6_eSWnGSUNHE4790KJhPUS_KWbxlVGi9ALC7A6kB0c_obhY281YykSr8pF_bqtTguFRSwdXBs";
 const PLAN_ID_MENSUAL = "P-6L6220336F166293VNKQ2U4Y";
 const PLAN_ID_ANUAL = "P-0FH01175UD464074SNKQ2VJA";
 
