@@ -170,12 +170,35 @@ export async function GET(request: Request) {
     ? (conexiones30d ?? []).length
     : new Set((conexiones30d ?? []).map((c) => c.cliente_id)).size;
 
+  // Conexiones por cliente (para la tabla lateral) — respeta los mismos filtros
+  // de periodo/cliente/día/hora que el resto de indicadores.
+  const conteoConexionesPorCliente = new Map<string, number>();
+  for (const c of conexionesFiltradas) {
+    conteoConexionesPorCliente.set(c.cliente_id, (conteoConexionesPorCliente.get(c.cliente_id) ?? 0) + 1);
+  }
+
+  let queryPerfiles = supabaseAdmin
+    .from("profiles")
+    .select("id, nombre, email")
+    .eq("role", "user");
+  if (clienteIdParam) queryPerfiles = queryPerfiles.eq("id", clienteIdParam);
+  const { data: perfiles } = await queryPerfiles;
+
+  const conexionesPorCliente = (perfiles ?? [])
+    .map((p) => ({
+      clienteId: p.id as string,
+      nombre: (p.nombre as string | null)?.trim() || (p.email as string),
+      conexiones: conteoConexionesPorCliente.get(p.id as string) ?? 0,
+    }))
+    .sort((a, b) => b.conexiones - a.conexiones);
+
   return NextResponse.json({
     totalClientes: totalClientes ?? 0,
     conexionesUltimaSemana,
     conexionesUltimoMes,
     heatmap,
     visitasPorSeccion,
+    conexionesPorCliente,
     frecuenciaMedia: Math.round(frecuenciaMedia * 10) / 10,
     duracionMediaMinutos: duracionMediaMinutos !== null ? Math.round(duracionMediaMinutos) : null,
     sesionesAnalizadas: todasLasDuraciones.length,

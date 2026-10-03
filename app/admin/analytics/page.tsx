@@ -32,12 +32,19 @@ import {
   Legend,
 } from "recharts";
 
+interface ConexionesPorClienteItem {
+  clienteId: string;
+  nombre: string;
+  conexiones: number;
+}
+
 interface DatosResumen {
   totalClientes: number;
   conexionesUltimaSemana: number;
   conexionesUltimoMes: number;
   heatmap: Record<string, number>;
   visitasPorSeccion: Record<string, number>;
+  conexionesPorCliente: ConexionesPorClienteItem[];
   frecuenciaMedia: number;
   duracionMediaMinutos: number | null;
   sesionesAnalizadas: number;
@@ -91,22 +98,29 @@ function generarOpcionesMeses(): { valor: string; label: string }[] {
 // de la página a esa combinación exacta de día + hora.
 function PuntoClicable(props: any) {
   const { cx, cy, dataKey, payload, stroke, onSeleccionar, filtroActivo } = props;
-  if (cx === undefined || cy === undefined) return null;
+  if (cx === undefined || cy === undefined || !payload) return null;
   const horaNum = parseInt(String(payload.hora).replace("h", ""), 10);
   const diaIdx = DIAS.indexOf(dataKey);
-  const esSeleccionado = filtroActivo && filtroActivo.dia === diaIdx && filtroActivo.hora === horaNum;
+  const esSeleccionado = !!filtroActivo && filtroActivo.dia === diaIdx && filtroActivo.hora === horaNum;
+
+  function manejarClic() {
+    if (diaIdx === -1 || Number.isNaN(horaNum)) return;
+    onSeleccionar(diaIdx, horaNum);
+  }
 
   return (
-    <circle
-      cx={cx}
-      cy={cy}
-      r={esSeleccionado ? 6 : 3.5}
-      fill={stroke}
-      stroke="white"
-      strokeWidth={esSeleccionado ? 2 : 1}
-      style={{ cursor: "pointer" }}
-      onClick={() => onSeleccionar(diaIdx, horaNum)}
-    />
+    <g style={{ cursor: "pointer" }} onClick={manejarClic}>
+      {/* zona de clic ampliada (invisible) — el punto visible es demasiado pequeño para pulsarlo con precisión */}
+      <circle cx={cx} cy={cy} r={11} fill="transparent" />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={esSeleccionado ? 6 : 3.5}
+        fill={stroke}
+        stroke="white"
+        strokeWidth={esSeleccionado ? 2 : 1}
+      />
+    </g>
   );
 }
 
@@ -337,7 +351,35 @@ export default function AdminAnalyticsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            {/* CONEXIONES POR CLIENTE — tabla */}
+            <section className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+              <h2 className="text-xs font-black text-[#0B3A6E] uppercase tracking-wider mb-1">Conexiones por cliente</h2>
+              <p className="text-[9px] text-slate-400 font-medium mb-3">Toca un cliente para filtrar por él.</p>
+              <div className="max-h-56 overflow-y-auto pr-1 space-y-1">
+                {datos.conexionesPorCliente.length === 0 && (
+                  <p className="text-[10px] text-slate-400 font-medium">Sin datos en este periodo.</p>
+                )}
+                {datos.conexionesPorCliente.map((c) => {
+                  const activo = c.clienteId === clienteSeleccionado;
+                  return (
+                    <button
+                      key={c.clienteId}
+                      onClick={() => setClienteSeleccionado(activo ? "" : c.clienteId)}
+                      className={`w-full flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors ${
+                        activo ? "bg-[#0B3A6E] text-white" : "bg-white hover:bg-[#0B3A6E]/5 text-slate-700"
+                      }`}
+                    >
+                      <span className="text-[10.5px] font-bold truncate">{c.nombre}</span>
+                      <span className={`text-[10.5px] font-black shrink-0 ${activo ? "text-white" : "text-[#0B3A6E]"}`}>
+                        {c.conexiones}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
 
             {/* CONEXIONES POR DÍA Y HORA — gráfico de líneas */}
             <section className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
