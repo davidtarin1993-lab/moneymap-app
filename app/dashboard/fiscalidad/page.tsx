@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import FiscalidadClientDashboard from "./fiscal-client";
 import registrosBackup from "./registros_fiscales_backup.json";
-import { Upload, CheckCircle2, X } from "lucide-react";
+import { Upload, CheckCircle2, X, FileText, Scale } from "lucide-react";
 
 const MAX_ARCHIVOS = 4;
 
@@ -28,6 +28,7 @@ export default function FiscalidadPage() {
 
   const [subidaRealizadaEnSesion, setSubidaRealizadaEnSesion] = useState(false);
   const [mostrarToastExito, setMostrarToastExito] = useState(false);
+  const [mostrarModalSubida, setMostrarModalSubida] = useState(false);
 
   const cargarUltimoExtracto = async (uid: string) => {
     const { data: ultimaFila } = await supabase
@@ -41,6 +42,7 @@ export default function FiscalidadPage() {
     if (!ultimaFila) {
       setRegistros(registrosBackup as any[]);
       setEstadoExtracto("sin_datos");
+      setMostrarModalSubida(true);
       return;
     }
 
@@ -221,6 +223,18 @@ export default function FiscalidadPage() {
   return (
     <div className="w-full bg-white">
 
+      <header className="max-w-4xl mx-auto px-3 pt-4 pb-3 border-b border-slate-100 flex items-center gap-3">
+        <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+          <Scale size={20} className="text-[#1FA187]" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-lg font-black text-[#0B3A6E] tracking-tight">Fiscalidad</h1>
+          <p className="text-slate-500 text-xs font-medium leading-relaxed mt-0.5">
+            Auditoría fiscal automatizada con las métricas oficiales de tu declaración.
+          </p>
+        </div>
+      </header>
+
       {mostrarToastExito && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-emerald-600 text-white rounded-2xl shadow-lg px-4 py-3 flex items-center gap-2.5 max-w-[90vw]">
           <CheckCircle2 size={18} className="shrink-0" />
@@ -231,25 +245,26 @@ export default function FiscalidadPage() {
         </div>
       )}
 
-      {!subidaRealizadaEnSesion && (
-        <div className="max-w-4xl mx-auto px-3 pt-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center gap-2.5 justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="bg-[#0B3A6E]/10 p-2 rounded-xl shrink-0">
-                <Upload size={16} className="text-[#0B3A6E]" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Sube tu declaración de la renta</p>
-                <p className="text-[10px] text-slate-500 truncate">
-                  {estadoExtracto === "procesando" && (progresoTexto || "Analizando tu declaración con IA...")}
-                  {estadoExtracto === "completado" && archivoNombre && `Última analizada: ${archivoNombre}`}
-                  {estadoExtracto === "error" && "Hubo un error al procesar el último archivo."}
-                  {estadoExtracto === "sin_datos" && `Aún no has subido ninguna declaración (viendo datos de ejemplo). Puedes subir hasta ${MAX_ARCHIVOS} a la vez.`}
-                </p>
-              </div>
+      {mostrarModalSubida && !subidaRealizadaEnSesion && (
+        <div className="fixed inset-0 z-[90] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 relative">
+            <button
+              onClick={() => setMostrarModalSubida(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="bg-[#0B3A6E]/10 w-14 h-14 rounded-2xl flex items-center justify-center mb-4">
+              <FileText size={26} className="text-[#0B3A6E]" />
             </div>
 
-            <label className={`shrink-0 text-center text-[11px] font-black uppercase tracking-wider px-4 py-2.5 rounded-xl cursor-pointer transition-all ${
+            <h3 className="text-lg font-black text-slate-900 mb-1.5">Sube tu declaración de la renta</h3>
+            <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+              Analizamos tu declaración con IA y te mostramos tu dashboard fiscal completo en segundos. Puedes subir hasta {MAX_ARCHIVOS} ejercicios a la vez.
+            </p>
+
+            <label className={`block text-center text-xs font-black uppercase tracking-wider px-4 py-3.5 rounded-2xl cursor-pointer transition-all mb-2.5 ${
               subiendo ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-[#0B3A6E] text-white hover:bg-[#11498a]"
             }`}>
               {subiendo ? "Procesando..." : "Subir PDF"}
@@ -257,42 +272,39 @@ export default function FiscalidadPage() {
                 type="file"
                 accept=".pdf"
                 multiple
-                onChange={handleSubirArchivos}
+                onChange={(e) => {
+                  setMostrarModalSubida(false);
+                  handleSubirArchivos(e);
+                }}
                 disabled={subiendo}
                 className="hidden"
               />
             </label>
+
+            <button
+              onClick={() => setMostrarModalSubida(false)}
+              className="w-full text-center text-[11px] font-bold text-slate-400 hover:text-slate-600 py-1.5"
+            >
+              Ahora no, gracias
+            </button>
           </div>
-
-          {errorSubida && (
-            <div className="mt-2 bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-bold rounded-xl p-2.5">
-              {errorSubida}
-            </div>
-          )}
-
-          {estadoExtracto === "procesando" && (
-            <div className="mt-2 bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-bold rounded-xl p-2.5">
-              {progresoTexto || "Tu declaración se está analizando."} No cierres esta pestaña.
-            </div>
-          )}
-
-          {estadoExtracto === "completado" && verificacion && (
-            <div className={`mt-2 text-[11px] font-bold rounded-xl p-2.5 border ${
-              verificacion === "completo"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                : verificacion === "incompleto"
-                ? "bg-amber-50 border-amber-200 text-amber-700"
-                : "bg-slate-50 border-slate-200 text-slate-500"
-            }`}>
-              {verificacion === "completo" && `✓ Declaración(es) verificada(s): ${registrosDetectados} métricas extraídas de ${ejerciciosDetectados} ejercicio(s) fiscal(es) en total.`}
-              {verificacion === "incompleto" && `⚠️ Atención: solo se extrajeron ${registrosDetectados} métricas de las esperadas para ${ejerciciosDetectados} ejercicio(s) en total. Revisa las declaraciones o inténtalo de nuevo.`}
-              {verificacion === "no_verificable" && "No se detectó ningún ejercicio fiscal en al menos uno de los documentos."}
-            </div>
-          )}
         </div>
       )}
 
-      <FiscalidadClientDashboard datosExcel={registros} />
+      <FiscalidadClientDashboard
+        datosExcel={registros}
+        subidaRealizadaEnSesion={subidaRealizadaEnSesion}
+        estadoExtracto={estadoExtracto}
+        subiendo={subiendo}
+        progresoTexto={progresoTexto}
+        errorSubida={errorSubida}
+        archivoNombre={archivoNombre}
+        verificacion={verificacion}
+        ejerciciosDetectados={ejerciciosDetectados}
+        registrosDetectados={registrosDetectados}
+        maxArchivos={MAX_ARCHIVOS}
+        handleSubirArchivos={handleSubirArchivos}
+      />
     </div>
   );
 }

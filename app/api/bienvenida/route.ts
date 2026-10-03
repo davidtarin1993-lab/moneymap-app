@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const justificante = await generarJustificantePDF({
       numero: `MM-${numeroBase}-${esAnual ? 'A' : 'M'}`,
       concepto: esAnual ? 'Suscripción anual MoneyMap' : 'Suscripción mensual MoneyMap',
-      importe: esAnual ? 99.99 : 8.99,
+      importe: esAnual ? 99.99 : 9.99,
       clienteNombre,
       fechaEmision: ahora,
       validoHasta: calcularValidoHasta(ahora, esAnual ? 'anual' : 'mensual'),
@@ -108,8 +108,7 @@ function plantillaBienvenida({ nombre, apellido, fechaNacimiento, esAnual }: { n
                   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
                     <tr>
                       <td style="padding:24px;">
-                        <p style="color:#0B3A6E;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 16px 0;">Tu plan: ${esAnual ? 'Anual — 99,99€/año' : 'Mensual — 8,99€/mes'}</p>
-                        <p style="color:#334155;font-size:13px;margin:0 0 16px 0;">Elige cómo prefieres pagar:</p>
+                        <p style="color:#0B3A6E;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 16px 0;">Tu plan: ${esAnual ? 'Anual — 99,99€/año' : 'Mensual — 9,99€/mes'}</p>                        <p style="color:#334155;font-size:13px;margin:0 0 16px 0;">Elige cómo prefieres pagar:</p>
 
                         <table cellpadding="0" cellspacing="0" width="100%">
                           <tr>
@@ -123,8 +122,7 @@ function plantillaBienvenida({ nombre, apellido, fechaNacimiento, esAnual }: { n
                         <p style="color:#334155;font-size:13px;margin:0 0 4px 0;"><strong>IBAN:</strong> ES0500810291210006602975</p>
                         <p style="color:#334155;font-size:13px;margin:0 0 4px 0;"><strong>Titular:</strong> David Tarín</p>
                         <p style="color:#334155;font-size:13px;margin:0 0 4px 0;"><strong>Concepto:</strong> MoneyMap - ${nombre}</p>
-                        <p style="color:#334155;font-size:13px;margin:0;"><strong>Importe:</strong> ${esAnual ? '99,99€' : '8,99€'}</p>
-                      </td>
+                        <p style="color:#334155;font-size:13px;margin:0;"><strong>Importe:</strong> ${esAnual ? '99,99€' : '9,99€'}</p>                      </td>
                     </tr>
                   </table>
                 </td>

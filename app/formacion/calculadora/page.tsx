@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
+import { Calculator } from "lucide-react";
 
 export default function CalculadoraPage() {
   // Selector de Modo: 'proyeccion' (Ver cuánto tendré) o 'objetivo' (Ver cómo llegar a X)
@@ -105,14 +105,11 @@ export default function CalculadoraPage() {
       <div className="max-w-5xl mx-auto w-full space-y-6">
         
         {/* ENCABEZADO */}
-        <header className="border-b border-gray-100 pb-5">
-          <Link href="/formacion" className="text-xs font-semibold text-gray-400 hover:text-gray-900 transition-colors w-fit flex items-center gap-1 mb-2">
-            ← Volver a la Academia
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="text-3xl md:text-4xl">📊</span>
-            <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Simulador Financiero</h1>
+        <header className="border-b border-gray-100 pb-5 flex items-center gap-3">
+          <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+            <Calculator size={20} className="text-[#1FA187]" />
           </div>
+          <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Proyector de Patrimonio</h1>
         </header>
 
         {/* SELECTOR DE MODO (ESTILO FINTECH) */}

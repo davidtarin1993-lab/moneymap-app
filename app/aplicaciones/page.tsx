@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Target, Sparkles, Calculator, Home, ChevronRight } from "lucide-react";
+import { Target, Sparkles, Calculator, Home, ChevronRight, LayoutGrid } from "lucide-react";
 
 const CONOCETE_MEJOR = [
   {
@@ -69,14 +69,16 @@ export default function AplicacionesPage() {
     <main className="w-full min-h-screen bg-white text-slate-800 px-4 py-6 md:py-10 overflow-y-auto antialiased">
       <div className="max-w-3xl mx-auto w-full space-y-8">
 
-        <header className="border-b border-slate-100 pb-5">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl md:text-4xl" role="img" aria-label="Aplicaciones">🧰</span>
-            <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Aplicaciones</h1>
+        <header className="border-b border-slate-100 pb-5 flex items-center gap-3">
+          <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+            <LayoutGrid size={20} className="text-[#1FA187]" />
           </div>
-          <p className="mt-2 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
-            Herramientas interactivas para calcular y descubrir más sobre tu situación financiera.
-          </p>
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Aplicaciones</h1>
+            <p className="mt-1 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
+              Herramientas interactivas para calcular y descubrir más sobre tu situación financiera.
+            </p>
+          </div>
         </header>
 
         <section className="space-y-3">

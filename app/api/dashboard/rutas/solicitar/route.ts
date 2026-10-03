@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const DIAS_ENTRE_SOLICITUDES = 30;
+const DIAS_ENTRE_SOLICITUDES = 90;
 
 const ETIQUETAS_OBJETIVO: Record<string, string> = {
   ahorro: "Ahorro general",

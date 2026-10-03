@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { NIVELES, calcularMesesTranscurridos, obtenerNivel } from "@/lib/niveles";
 import {
   User,
   Mail,
   CalendarClock,
-  Award,
   LogOut,
   Lock,
   Eye,
   EyeOff,
   CheckCircle2,
+  ArrowLeft,
 } from "lucide-react";
 
 export default function PerfilPage() {
@@ -109,20 +109,20 @@ export default function PerfilPage() {
     );
   }
 
-  const mesesTranscurridos = fechaInicio ? calcularMesesTranscurridos(fechaInicio) : 0;
-  const { indiceActual, nivelActual, siguienteNivel, mesesParaSiguiente } = obtenerNivel(mesesTranscurridos);
-
   return (
     <main className="bg-white flex flex-col">
       <div className="flex flex-col p-4 md:p-6 max-w-2xl mx-auto w-full space-y-3">
+
         {/* CABECERA */}
-        <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-          <div className="w-11 h-11 rounded-xl bg-[#0B3A6E] text-white flex items-center justify-center text-sm font-black shrink-0">
-            {nombre.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-900 tracking-tight truncate">Tu perfil</h1>
-            <p className="text-slate-400 text-[11px] font-semibold">Gestiona tu cuenta MoneyMap.</p>
+        <div className="pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-11 h-11 rounded-xl bg-[#0B3A6E] text-white flex items-center justify-center text-sm font-black shrink-0">
+              {nombre.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base font-black text-slate-900 tracking-tight truncate">Ajustes de cuenta</h1>
+              <p className="text-slate-400 text-[11px] font-semibold">Gestiona tu contraseña y tu sesión.</p>
+            </div>
           </div>
         </div>
 
@@ -157,6 +157,7 @@ export default function PerfilPage() {
               <p className="text-[11px] font-black text-slate-800 truncate">{formatearFecha(fechaRenovacion)}</p>
             </div>
           )}
+
           {/* CAMBIAR CONTRASEÑA */}
           <div className="pt-1.5 border-t border-slate-100">
             <div className="flex items-center gap-1.5 mb-1.5">
@@ -211,47 +212,16 @@ export default function PerfilPage() {
           </div>
         </section>
 
-        {/* BLOQUE 2: NIVEL */}
-        <section className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-2">
-          <h2 className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tu nivel</h2>
-
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Award size={13} className="text-[#1FA187]" />
-              <span className="text-[8.5px] font-black uppercase tracking-wider text-[#1FA187]">
-                Nivel {indiceActual + 1} de {NIVELES.length}
-              </span>
-            </div>
-            <p className="text-[13px] font-black text-slate-800">{nivelActual.nombre}</p>
-            <p className="text-[10.5px] text-slate-500 font-medium mt-0.5 leading-relaxed">
-              {nivelActual.descripcion}
-            </p>
-
-            <div className="mt-2.5 h-1.5 bg-slate-200 rounded-full overflow-hidden flex gap-0.5">
-              {NIVELES.map((_, idx) => (
-                <div key={idx} className={`flex-1 rounded-full ${idx <= indiceActual ? "bg-[#1FA187]" : "bg-slate-300"}`} />
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-            <p className="text-[8.5px] font-black uppercase tracking-wider text-slate-400">Próximo nivel</p>
-            {siguienteNivel ? (
-              <p className="text-[11px] font-black text-slate-700">
-                {siguienteNivel.nombre} <span className="text-slate-400 font-medium">· {mesesParaSiguiente} {mesesParaSiguiente === 1 ? "mes" : "meses"}</span>
-              </p>
-            ) : (
-              <p className="text-[11px] font-black text-slate-700">Nivel máximo alcanzado 🎉</p>
-            )}
-          </div>
-        </section>
+        <p className="text-center text-[10px] text-slate-400 font-medium">
+          ¿Quieres ver tu nivel y progreso? <Link href="/bienvenida" className="text-[#0B3A6E] font-bold underline">Vuelve al inicio</Link>
+        </p>
 
         {/* SALIR */}
         <button
           onClick={handleSalir}
           disabled={cerrandoSesion}
           className="w-full flex items-center justify-center gap-2 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-60 rounded-2xl p-3 text-xs font-black uppercase tracking-wider transition-all"
-                  >
+        >
           <LogOut size={15} />
           {cerrandoSesion ? "Cerrando sesión..." : "Salir"}
         </button>

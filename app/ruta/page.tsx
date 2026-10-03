@@ -17,6 +17,7 @@ import {
   FileX2,
   Scale,
   Lock,
+  Compass,
 } from "lucide-react";
 import { useRegistrarVisita } from "@/lib/useRegistrarVisita";
 
@@ -199,23 +200,25 @@ export default function RutaPage() {
   return (
     <main className="w-full min-h-screen bg-white text-slate-800 px-4 py-6 md:py-10 pb-24 antialiased">
       <div className="max-w-md mx-auto w-full">
-      <header className="border-b border-slate-100 pb-5 mb-5">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl md:text-4xl" role="img" aria-label="Ruta">🧭</span>
-          <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Tu Ruta</h1>
+      <header className="border-b border-slate-100 pb-5 mb-5 flex items-center gap-3">
+        <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+          <Compass size={20} className="text-[#1FA187]" />
         </div>
-        <p className="mt-2 text-xs md:text-sm text-slate-500 font-medium leading-normal">
-          {rutas.length > 0
-            ? `Tienes ${rutas.length} informe(s) de ruta trazados junto a tu asesor.`
-            : "Trazamos tu plan financiero de manera personalizada."}
-        </p>
+        <div className="min-w-0">
+          <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Tu Ruta</h1>
+          <p className="mt-1 text-xs md:text-sm text-slate-500 font-medium leading-normal">
+            {rutas.length > 0
+              ? `Tienes ${rutas.length} informe(s) de ruta trazados junto a tu asesor.`
+              : "Trazamos tu plan financiero de manera personalizada."}
+          </p>
+        </div>
       </header>
 
       {rutas.length > 0 ? (
         <div className="space-y-3">
           {botonSolicitar}
           <p className="text-[10px] text-slate-400 font-medium text-center -mt-1.5">
-            Solo puedes solicitar una ruta nueva al mes.
+            Solo puedes solicitar una ruta nueva cada 3 meses.
           </p>
 
           {rutas.map((ruta) => {
@@ -368,7 +371,7 @@ export default function RutaPage() {
 
           {botonSolicitar}
           <p className="text-[10px] text-slate-400 font-medium text-center">
-            Solo puedes solicitar una ruta al mes.
+            Solo puedes solicitar una ruta cada 3 meses.
           </p>
         </div>
       )}

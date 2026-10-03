@@ -113,15 +113,17 @@ export default function ChatPage() {
   return (
     <main className="max-w-4xl mx-auto w-full bg-white text-slate-800 px-3 py-5 font-sans pb-32 antialiased">
 
-      <header className="border-b border-slate-100 pb-5">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl md:text-4xl" role="img" aria-label="Soporte">🛟</span>
-          <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Soporte</h1>
+      <header className="border-b border-slate-100 pb-5 flex items-center gap-3">
+        <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+          <LifeBuoy size={20} className="text-[#1FA187]" />
         </div>
-        <p className="mt-2 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
-          Escríbenos si tienes cualquier duda sobre el funcionamiento de la app, quieres consultar algo
-          sobre tus finanzas, o te gustaría que tratemos algún tema de formación. Tu asesor te responderá lo antes posible.
-        </p>
+        <div className="min-w-0">
+          <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Soporte</h1>
+          <p className="mt-1 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
+            Escríbenos si tienes cualquier duda sobre el funcionamiento de la app, quieres consultar algo
+            sobre tus finanzas, o te gustaría que tratemos algún tema de formación. Tu asesor te responderá lo antes posible.
+          </p>
+        </div>
       </header>
 
       {!hayConversacion && (

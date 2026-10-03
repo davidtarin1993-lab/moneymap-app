@@ -139,7 +139,9 @@ function plantillaAcceso(nombre: string, enlace: string) {
 
               <tr>
                 <td align="center" style="padding:32px 40px 16px 40px;">
-                  <img src="cid:logo-moneymap" alt="MoneyMap" width="160" style="display:block;" />
+                  <a href="https://www.moneymap.es">
+                    <img src="cid:logo-moneymap" alt="MoneyMap" width="160" style="display:block;" />
+                  </a>
                 </td>
               </tr>
 
@@ -150,10 +152,20 @@ function plantillaAcceso(nombre: string, enlace: string) {
                 </td>
               </tr>
 
-              <tr>
+             <tr>
                 <td align="center" style="padding:8px 40px 24px 40px;">
                   <p style="color:#334155;font-size:13px;margin:0 0 20px 0;">Antes de entrar, crea tu contraseña personal pulsando el siguiente botón:</p>
                   <a href="${enlace}" style="background-color:#1FA187;color:#ffffff;text-decoration:none;font-weight:bold;font-size:13px;padding:14px 28px;border-radius:10px;display:inline-block;">Crear mi contraseña</a>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:0 40px 24px 40px;">
+                  <p style="color:#334155;font-size:12px;margin:0;">
+                    Una vez creada tu contraseña, puedes ir a la página web
+                    <a href="https://www.moneymap.es" style="color:#0B3A6E;font-weight:bold;">www.moneymap.es</a>
+                    e iniciar sesión con tu email y tu nueva contraseña.
+                  </p>
                 </td>
               </tr>
 

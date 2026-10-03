@@ -125,33 +125,6 @@ export default function BienvenidaPage() {
   const mesesTranscurridos = fechaInicio ? calcularMesesTranscurridos(fechaInicio) : 0;
   const { indiceActual, nivelActual, siguienteNivel, mesesParaSiguiente } = obtenerNivel(mesesTranscurridos);
 
-  // Puntos de la curva de niveles (SVG) — todo vive dentro del mismo viewBox
-  // para que la curva, los puntos y las etiquetas escalen siempre juntos y
-  // no se descuadren entre móvil, tablet y ordenador.
-  const ANCHO_SVG = 320;
-  const ALTO_SVG = 150;
-  const MARGEN_X = 26;
-  const Y_BASE = 88;
-  const Y_TOPE = 30;
-  const numNiveles = NIVELES.length;
-
-  const puntosCurva = NIVELES.map((_, idx) => {
-    const progreso = numNiveles > 1 ? idx / (numNiveles - 1) : 0;
-    const x = MARGEN_X + progreso * (ANCHO_SVG - MARGEN_X * 2);
-    const y = Y_BASE - progreso * (Y_BASE - Y_TOPE);
-    return { x, y };
-  });
-
-  // Curva suave que pasa EXACTAMENTE por cada punto (Bezier cúbica con
-  // control points horizontales a mitad de camino entre cada par de nodos),
-  // para que la línea nunca quede desalineada de los círculos.
-  const curvaPath = puntosCurva.reduce((acc, punto, idx) => {
-    if (idx === 0) return `M ${punto.x},${punto.y}`;
-    const anterior = puntosCurva[idx - 1];
-    const puntoMedioX = anterior.x + (punto.x - anterior.x) / 2;
-    return `${acc} C ${puntoMedioX},${anterior.y} ${puntoMedioX},${punto.y} ${punto.x},${punto.y}`;
-  }, "");
-
   const etiquetaRuta =
     estadoRuta === "tiene" ? "Tu Ruta" : estadoRuta === "solicitada" ? "Consultar la ruta" : "Solicitar Ruta";
 
@@ -177,108 +150,50 @@ export default function BienvenidaPage() {
           </div>
         </div>
 
-        {/* NIVEL — curva de progreso con periodos de desbloqueo */}
+        {/* NIVEL — con gráfica ascendente */}
         <section className="bg-gradient-to-br from-[#0B3A6E] to-[#0B3A6E]/90 rounded-2xl p-4 shadow-md relative overflow-hidden">
           <div className="absolute -top-8 -right-8 w-28 h-28 bg-[#1FA187]/25 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10">
-            <div className="flex items-center gap-1.5 mb-1">
-              <TrendingUp size={13} className="text-[#1FA187]" />
-              <span className="text-[8.5px] font-black uppercase tracking-widest text-[#1FA187]">
-                Nivel {indiceActual + 1} de {NIVELES.length}
-              </span>
-            </div>
-            <p className="text-sm font-black text-white truncate">{nivelActual.nombre}</p>
-            <p className="text-[10.5px] text-white/60 font-medium mt-0.5 mb-1 leading-relaxed">
-              {nivelActual.descripcion}
-            </p>
-
-            {/* CURVA ASCENDENTE DE NIVELES — todo dentro de un único SVG,
-                así la curva, los puntos y las etiquetas siempre escalan
-                juntos y no se descuadran entre móvil, tablet y ordenador. */}
-            <div className="bg-black/10 rounded-xl p-2 mt-2">
-              <svg
-                viewBox={`0 0 ${ANCHO_SVG} ${ALTO_SVG}`}
-                preserveAspectRatio="xMidYMid meet"
-                className="w-full h-auto block"
-              >
-                <path d={curvaPath} fill="none" stroke="#1FA187" strokeOpacity="0.55" strokeWidth="2.5" strokeLinecap="round" />
-
-                {NIVELES.map((nivel: any, idx: number) => {
-                  const { x, y } = puntosCurva[idx];
-                  const logrado = idx < indiceActual;
-                  const actual = idx === indiceActual;
-                  const bloqueado = idx > indiceActual;
-                  const palabras = String(nivel.nombre).split(" ");
-                  const yEtiquetas = y + (bloqueado ? 24 : 14);
-
-                  return (
-                    <g key={idx}>
-                      {actual && (
-                        <circle cx={x} cy={y} r="10" fill="none" stroke="#1FA187" strokeWidth="1.5" opacity="0.55">
-                          <animate attributeName="r" values="7;12;7" dur="2s" repeatCount="indefinite" />
-                          <animate attributeName="opacity" values="0.55;0.05;0.55" dur="2s" repeatCount="indefinite" />
-                        </circle>
-                      )}
-                      {actual && (
-                        <text x={x} y={y - 14} textAnchor="middle" fontSize="6.5" fontWeight="900" fill="#1FA187">
-                          ESTÁS AQUÍ
-                        </text>
-                      )}
-
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r={actual ? 6 : 5}
-                        fill={logrado || actual ? "#1FA187" : "#0B3A6E"}
-                        stroke={bloqueado ? "rgba(255,255,255,0.35)" : "#1FA187"}
-                        strokeWidth="1.5"
-                      />
-
-                      {bloqueado && (
-                        <text x={x} y={y + 15} textAnchor="middle" fontSize="8">
-                          🔒
-                        </text>
-                      )}
-
-                      <text
-                        x={x}
-                        y={yEtiquetas}
-                        textAnchor="middle"
-                        fontSize="6.3"
-                        fontWeight="900"
-                        fill={actual ? "#1FA187" : bloqueado ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.8)"}
-                      >
-                        {palabras.map((palabra: string, pIdx: number) => (
-                          <tspan key={pIdx} x={x} dy={pIdx === 0 ? 0 : 8}>
-                            {palabra.toUpperCase()}
-                          </tspan>
-                        ))}
-                      </text>
-
-                      <text
-                        x={x}
-                        y={yEtiquetas + palabras.length * 8 + 8}
-                        textAnchor="middle"
-                        fontSize="6"
-                        fontWeight="900"
-                        fill={bloqueado ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.5)"}
-                      >
-                        {nivel.umbralMeses > 0 ? `${nivel.umbralMeses}m` : "Inicio"}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-white/10">
-              <p className="text-[10px] text-white/50 font-medium">
-                {siguienteNivel
-                  ? <>Próximo: <span className="text-white/80 font-bold">{siguienteNivel.nombre}</span> en {mesesParaSiguiente} {mesesParaSiguiente === 1 ? "mes" : "meses"}</>
-                  : "Nivel máximo alcanzado 🎉"}
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingUp size={13} className="text-[#1FA187]" />
+                <span className="text-[8.5px] font-black uppercase tracking-widest text-[#1FA187]">
+                  Nivel {indiceActual + 1} de {NIVELES.length}
+                </span>
+              </div>
+              <p className="text-sm font-black text-white truncate">{nivelActual.nombre}</p>
+              <p className="text-[10.5px] text-white/60 font-medium mt-0.5 leading-relaxed">
+                {nivelActual.descripcion}
               </p>
             </div>
+
+            <div className="flex items-end gap-1 h-10 shrink-0">
+              {NIVELES.map((_, idx) => {
+                const alturaPct = ((idx + 1) / NIVELES.length) * 100;
+                const activo = idx <= indiceActual;
+                const esActual = idx === indiceActual;
+                return (
+                  <div key={idx} className="flex flex-col items-center justify-end h-full">
+                    {esActual && (
+                      <span className="w-1 h-1 rounded-full bg-[#1FA187] mb-0.5" />
+                    )}
+                    <div
+                      className={`w-2 rounded-t-sm transition-all ${activo ? "bg-[#1FA187]" : "bg-white/15"}`}
+                      style={{ height: `${alturaPct}%` }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="relative z-10 flex items-center justify-between gap-2 mt-3 pt-3 border-t border-white/10">
+            <p className="text-[10px] text-white/50 font-medium">
+              {siguienteNivel
+                ? <>Próximo: <span className="text-white/80 font-bold">{siguienteNivel.nombre}</span> en {mesesParaSiguiente} {mesesParaSiguiente === 1 ? "mes" : "meses"}</>
+                : "Nivel máximo alcanzado 🎉"}
+            </p>
           </div>
         </section>
 

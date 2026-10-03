@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
+import { LineChart } from "lucide-react";
 import { listaMovimientos, capitalInicialSoporte } from "./carteraData";
 import { useRegistrarVisita } from "@/lib/useRegistrarVisita";
 
@@ -81,16 +81,11 @@ export default function CarteraPage() {
       <div className="max-w-5xl mx-auto w-full space-y-6">
         
         {/* ENCABEZADO */}
-        <header className="border-b border-gray-100 pb-5">
-          <Link href="/formacion" className="text-xs font-semibold text-gray-400 hover:text-gray-900 flex items-center gap-1 mb-2">
-            ← Volver a la Academia
-          </Link>
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl md:text-4xl">💰</span>
-              <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Cartera Modelo MoneyMap</h1>
-            </div>
+        <header className="border-b border-gray-100 pb-5 flex items-center gap-3">
+          <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+            <LineChart size={20} className="text-[#1FA187]" />
           </div>
+          <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Cartera Modelo MoneyMap</h1>
         </header>
 
         {/* MÉTRICAS */}

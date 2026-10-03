@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Pill } from "lucide-react";
 import { pildoras } from "./pildorasData"; // <-- CONEXIÓN AUTOMÁTICA
 import { useRegistrarVisita } from "@/lib/useRegistrarVisita";
 
@@ -45,15 +46,12 @@ export default function PildorasPage() {
     <main className="w-full min-h-screen bg-white text-gray-900 px-4 py-6 md:py-10 antialiased">
       <div className="max-w-5xl mx-auto w-full space-y-6">
         
-        <header className="border-b border-gray-100 pb-5">
-          <div className="flex flex-col gap-2">
-            <Link href="/formacion" className="text-xs font-semibold text-gray-400 hover:text-gray-900 transition-colors w-fit flex items-center gap-1">
-              ← Volver a la Academia
-            </Link>
-            <div className="flex items-center gap-3 mt-1">
-              <span className="text-3xl md:text-4xl">💊</span>
-              <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Píldoras de Aprendizaje</h1>
-            </div>
+        <header className="border-b border-gray-100 pb-5 flex items-center gap-3">
+          <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+            <Pill size={20} className="text-[#1FA187]" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Píldoras de Aprendizaje</h1>
             <p className="mt-1 text-sm text-gray-500 max-w-xl">
               Lecciones express de pocos minutos. Conceptos financieros explicados de forma directa.
             </p>

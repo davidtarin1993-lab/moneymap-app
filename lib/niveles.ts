@@ -5,11 +5,11 @@ export interface Nivel {
 }
 
 export const NIVELES: Nivel[] = [
-  { umbralMeses: 0, nombre: "Primeros Pasos", descripcion: "Acabas de trazar tu ruta. La paciencia es tu mejor aliada al principio del camino." },
+  { umbralMeses: 0, nombre: "Primeros Pasos", descripcion: "Acabas de trazar tu ruta. La paciencia es tu mejor aliada." },
   { umbralMeses: 3, nombre: "Rumbo Definido", descripcion: "Ya tienes el rumbo claro. Cada mes que pasa, tu ruta se consolida." },
-  { umbralMeses: 6, nombre: "Piloto en Marcha", descripcion: "Llevas medio año navegando tus finanzas con dirección. El hábito ya es tuyo." },
-  { umbralMeses: 12, nombre: "Navegante Experto", descripcion: "Un año de trayecto. Conoces tu mapa financiero mejor que nadie." },
-  { umbralMeses: 24, nombre: "Conductor Experto", descripcion: "Dos años recorriendo tu ruta financiera. Eres un referente de constancia." },
+  { umbralMeses: 6, nombre: "Tomando el control", descripcion: "Llevas medio año navegando y tus finanzas empiezan a tener dirección. El hábito lo estas construyendo." },
+  { umbralMeses: 12, nombre: "Navegante", descripcion: "Un año de trayecto. Conoces tu mapa financiero mejor que nadie." },
+  { umbralMeses: 24, nombre: "Conductor Experto", descripcion: "Dos años conociendo tu ruta financiera y empiezas a ser un refente en la toma de decisión financiera." },
 ];
 
 export function calcularMesesTranscurridos(fechaInicio: Date): number {

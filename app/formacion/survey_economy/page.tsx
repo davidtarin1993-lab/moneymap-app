@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Target, Info, RotateCcw } from "lucide-react";
+import { Target, Info, RotateCcw } from "lucide-react";
 
 interface Opcion {
   texto: string;
@@ -156,18 +155,16 @@ export default function SurveyEconomyPage() {
   return (
     <main className="w-full min-h-screen bg-white text-slate-800 px-4 py-6 md:py-10 pb-24 antialiased">
       <div className="max-w-lg mx-auto w-full">
-        <Link href="/aplicaciones" className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:text-[#0B3A6E] mb-3">
-          <ArrowLeft size={12} /> Volver a Aplicaciones
-        </Link>
-
-        <header className="border-b border-slate-100 pb-5 mb-5">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl md:text-4xl" role="img" aria-label="Perfilador">🎯</span>
-            <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Perfilador de Riesgo</h1>
+        <header className="border-b border-slate-100 pb-5 mb-5 flex items-center gap-3">
+          <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+            <Target size={20} className="text-[#1FA187]" />
           </div>
-          <p className="mt-2 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
-            15 preguntas para descubrir si eres un inversor conservador, moderado o arriesgado.
-          </p>
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Perfilador de Riesgo</h1>
+            <p className="mt-1 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
+              15 preguntas para descubrir si eres un inversor conservador, moderado o arriesgado.
+            </p>
+          </div>
         </header>
 
         {!mostrarResultado ? (

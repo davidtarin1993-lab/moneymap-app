@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { TrendingUp, Scale, ChevronRight } from "lucide-react";
+import { TrendingUp, Scale, ChevronRight, Map } from "lucide-react";
 
 export default function DashboardHubPage() {
   const router = useRouter();
@@ -11,7 +11,7 @@ export default function DashboardHubPage() {
   const [cargando, setCargando] = useState(true);
   const [restantesMovimientos, setRestantesMovimientos] = useState<number | null>(null);
   const [restantesFiscal, setRestantesFiscal] = useState<number | null>(null);
-
+  const [mostrarModalSubida, setMostrarModalSubida] = useState(false);
   useEffect(() => {
     async function iniciar() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -58,14 +58,16 @@ export default function DashboardHubPage() {
     <main className="w-full min-h-screen bg-white text-slate-800 px-4 py-6 md:py-10 antialiased">
       <div className="max-w-3xl mx-auto w-full space-y-6">
 
-        <header className="border-b border-slate-100 pb-5">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl md:text-4xl" role="img" aria-label="Mapa">🗺️</span>
-            <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Tu Mapa Financiero</h1>
+        <header className="border-b border-slate-100 pb-5 flex items-center gap-3">
+          <div className="bg-[#0B3A6E] p-2.5 rounded-2xl shrink-0">
+            <Map size={20} className="text-[#1FA187]" />
           </div>
-          <p className="mt-2 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
-            Elige qué quieres revisar: tus movimientos bancarios o tu situación fiscal.
-          </p>
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-black text-[#0B3A6E] tracking-tight">Tu Mapa Financiero</h1>
+            <p className="mt-1 text-xs md:text-sm text-slate-500 max-w-xl font-medium leading-normal">
+              Elige qué quieres revisar: tus movimientos bancarios o tu situación fiscal.
+            </p>
+          </div>
         </header>
 
         <section className="grid grid-cols-1 gap-3.5">
