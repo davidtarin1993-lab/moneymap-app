@@ -17,8 +17,20 @@ import {
   Pill,
   Newspaper,
   LineChart as LineChartIcon,
+  X,
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 interface DatosResumen {
   totalClientes: number;
@@ -31,7 +43,28 @@ interface DatosResumen {
   sesionesAnalizadas: number;
 }
 
+interface Cliente {
+  id: string;
+  email: string;
+  nombre: string | null;
+}
+
+interface FiltroDiaHora {
+  dia: number;
+  hora: number;
+}
+
 const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+const COLORES_DIAS: Record<string, string> = {
+  Dom: "#94A3B8",
+  Lun: "#0B3A6E",
+  Mar: "#1FA187",
+  Mié: "#B45309",
+  Jue: "#7C3AED",
+  Vie: "#2563EB",
+  Sáb: "#DC2626",
+};
 
 const SECCIONES_INFO: Record<string, { label: string; icono: React.ReactNode; color: string }> = {
   movimientos: { label: "Movimientos", icono: <TrendingUp size={12} />, color: "#0B3A6E" },
@@ -54,6 +87,29 @@ function generarOpcionesMeses(): { valor: string; label: string }[] {
   return opciones;
 }
 
+// Punto clicable de cada línea del gráfico día/hora: al pulsar, filtra el resto
+// de la página a esa combinación exacta de día + hora.
+function PuntoClicable(props: any) {
+  const { cx, cy, dataKey, payload, stroke, onSeleccionar, filtroActivo } = props;
+  if (cx === undefined || cy === undefined) return null;
+  const horaNum = parseInt(String(payload.hora).replace("h", ""), 10);
+  const diaIdx = DIAS.indexOf(dataKey);
+  const esSeleccionado = filtroActivo && filtroActivo.dia === diaIdx && filtroActivo.hora === horaNum;
+
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={esSeleccionado ? 6 : 3.5}
+      fill={stroke}
+      stroke="white"
+      strokeWidth={esSeleccionado ? 2 : 1}
+      style={{ cursor: "pointer" }}
+      onClick={() => onSeleccionar(diaIdx, horaNum)}
+    />
+  );
+}
+
 export default function AdminAnalyticsPage() {
   const router = useRouter();
   const [validando, setValidando] = useState(true);
@@ -61,6 +117,11 @@ export default function AdminAnalyticsPage() {
   const [cargandoDatos, setCargandoDatos] = useState(true);
   const [datos, setDatos] = useState<DatosResumen | null>(null);
   const [mesSeleccionado, setMesSeleccionado] = useState<string>("");
+
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [busquedaCliente, setBusquedaCliente] = useState("");
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<string>("");
+  const [filtroDiaHora, setFiltroDiaHora] = useState<FiltroDiaHora | null>(null);
 
   const opcionesMeses = generarOpcionesMeses();
 
@@ -76,6 +137,28 @@ export default function AdminAnalyticsPage() {
     validarAdmin();
   }, [router]);
 
+  // Cargamos el listado de clientes una sola vez, para el selector.
+  useEffect(() => {
+    async function cargarClientes() {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+      const response = await fetch("/api/admin/analytics/clientes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      setClientes(data.clientes ?? []);
+    }
+    if (autorizado) cargarClientes();
+  }, [autorizado]);
+
+  // Al cambiar de cliente o de mes, el punto seleccionado del gráfico ya no es
+  // fiable (podría no existir en el nuevo periodo), así que lo limpiamos.
+  useEffect(() => {
+    setFiltroDiaHora(null);
+  }, [clienteSeleccionado, mesSeleccionado]);
+
   useEffect(() => {
     async function cargarDatos() {
       setCargandoDatos(true);
@@ -83,9 +166,15 @@ export default function AdminAnalyticsPage() {
       const token = session?.access_token;
       if (!token) return;
 
-      const url = mesSeleccionado
-        ? `/api/admin/analytics/resumen?mes=${mesSeleccionado}`
-        : `/api/admin/analytics/resumen`;
+      const params = new URLSearchParams();
+      if (mesSeleccionado) params.set("mes", mesSeleccionado);
+      if (clienteSeleccionado) params.set("clienteId", clienteSeleccionado);
+      if (filtroDiaHora) {
+        params.set("dia", String(filtroDiaHora.dia));
+        params.set("hora", String(filtroDiaHora.hora));
+      }
+
+      const url = `/api/admin/analytics/resumen${params.toString() ? `?${params.toString()}` : ""}`;
 
       const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       const data = await response.json();
@@ -94,14 +183,12 @@ export default function AdminAnalyticsPage() {
     }
 
     if (autorizado) cargarDatos();
-  }, [autorizado, mesSeleccionado]);
+  }, [autorizado, mesSeleccionado, clienteSeleccionado, filtroDiaHora]);
 
   if (validando) {
     return <div className="w-full min-h-screen bg-white flex items-center justify-center"><p className="text-sm font-bold text-slate-500">Validando acceso...</p></div>;
   }
   if (!autorizado) return null;
-
-  const maxHeatmap = datos ? Math.max(1, ...Object.values(datos.heatmap)) : 1;
 
   const datosBarChart = datos
     ? Object.entries(datos.visitasPorSeccion).map(([key, valor]) => ({
@@ -109,6 +196,41 @@ export default function AdminAnalyticsPage() {
         visitas: valor,
       }))
     : [];
+
+  // Transformamos el heatmap (clave "dia-hora") en series por hora, una línea por
+  // día de la semana, para el gráfico de líneas.
+  const datosLinea = datos
+    ? Array.from({ length: 24 }, (_, hora) => {
+        const punto: Record<string, number | string> = { hora: `${hora}h` };
+        DIAS.forEach((dia, diaIdx) => {
+          punto[dia] = datos.heatmap[`${diaIdx}-${hora}`] ?? 0;
+        });
+        return punto;
+      })
+    : [];
+
+  function etiquetaCliente(c: Cliente): string {
+    return c.nombre?.trim() || c.email;
+  }
+
+  const clientesFiltrados = clientes.filter((c) =>
+    etiquetaCliente(c).toLowerCase().includes(busquedaCliente.toLowerCase())
+  );
+
+  const clienteSeleccionadoObj = clientes.find((c) => c.id === clienteSeleccionado);
+  const nombreClienteSeleccionado = clienteSeleccionadoObj ? etiquetaCliente(clienteSeleccionadoObj) : "";
+
+  function manejarSeleccionPunto(dia: number, hora: number) {
+    setFiltroDiaHora((actual) =>
+      actual && actual.dia === dia && actual.hora === hora ? null : { dia, hora }
+    );
+  }
+
+  function quitarFiltros() {
+    setClienteSeleccionado("");
+    setBusquedaCliente("");
+    setFiltroDiaHora(null);
+  }
 
   return (
     <div className="w-full min-h-screen bg-white text-slate-800 px-4 py-6 font-sans pb-32 antialiased">
@@ -121,17 +243,61 @@ export default function AdminAnalyticsPage() {
             <BarChart3 size={20} /> Analítica de Uso
           </h1>
 
-          <select
-            value={mesSeleccionado}
-            onChange={(e) => setMesSeleccionado(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-[#0B3A6E]"
-          >
-            <option value="">Últimos 30 días</option>
-            {opcionesMeses.map((m) => (
-              <option key={m.valor} value={m.valor}>{m.label}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={mesSeleccionado}
+              onChange={(e) => setMesSeleccionado(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-[#0B3A6E]"
+            >
+              <option value="">Últimos 30 días</option>
+              {opcionesMeses.map((m) => (
+                <option key={m.valor} value={m.valor}>{m.label}</option>
+              ))}
+            </select>
+
+            <div className="flex flex-col gap-1">
+              <input
+                type="text"
+                value={busquedaCliente}
+                onChange={(e) => setBusquedaCliente(e.target.value)}
+                placeholder="Buscar cliente..."
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-[#0B3A6E] w-40"
+              />
+            </div>
+
+            <select
+              value={clienteSeleccionado}
+              onChange={(e) => setClienteSeleccionado(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-[#0B3A6E] max-w-[200px]"
+            >
+              <option value="">Todos los clientes</option>
+              {clientesFiltrados.map((c) => (
+                <option key={c.id} value={c.id}>{etiquetaCliente(c)}</option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        {(clienteSeleccionado || filtroDiaHora) && (
+          <div className="flex items-center justify-between gap-2 bg-[#0B3A6E]/5 border border-[#0B3A6E]/15 rounded-xl px-3 py-2 mt-3">
+            <p className="text-[10px] font-bold text-[#0B3A6E] flex items-center gap-1 flex-wrap">
+              {clienteSeleccionado && (
+                <span className="bg-[#0B3A6E] text-white rounded-full px-2 py-0.5">{nombreClienteSeleccionado}</span>
+              )}
+              {filtroDiaHora && (
+                <span className="bg-[#1FA187] text-white rounded-full px-2 py-0.5">
+                  {DIAS[filtroDiaHora.dia]} a las {filtroDiaHora.hora}h
+                </span>
+              )}
+            </p>
+            <button
+              onClick={quitarFiltros}
+              className="flex items-center gap-1 text-[9px] font-black uppercase text-slate-400 hover:text-[#0B3A6E] shrink-0"
+            >
+              <X size={11} /> Quitar filtros
+            </button>
+          </div>
+        )}
       </header>
 
       {cargandoDatos || !datos ? (
@@ -142,8 +308,10 @@ export default function AdminAnalyticsPage() {
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5">
-              <div className="flex items-center gap-1.5 text-slate-400 mb-1"><Users size={12} /><span className="text-[8.5px] font-black uppercase">Clientes</span></div>
-              <p className="text-xl font-black text-[#0B3A6E]">{datos.totalClientes}</p>
+              <div className="flex items-center gap-1.5 text-slate-400 mb-1"><Users size={12} /><span className="text-[8.5px] font-black uppercase">{clienteSeleccionado ? "Cliente" : "Clientes"}</span></div>
+              <p className={`font-black text-[#0B3A6E] ${clienteSeleccionado ? "text-[12px] truncate" : "text-xl"}`}>
+                {clienteSeleccionado ? nombreClienteSeleccionado : datos.totalClientes}
+              </p>
             </div>
 
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5">
@@ -171,38 +339,40 @@ export default function AdminAnalyticsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-            {/* HEATMAP DÍA/HORA */}
+            {/* CONEXIONES POR DÍA Y HORA — gráfico de líneas */}
             <section className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-              <h2 className="text-xs font-black text-[#0B3A6E] uppercase tracking-wider mb-3">Conexiones por día y hora</h2>
-              <div className="overflow-x-auto">
-                <div className="min-w-[560px]">
-                  <div className="flex gap-[3px] pl-8 mb-1">
-                    {Array.from({ length: 24 }, (_, h) => (
-                      <div key={h} className="w-4 text-center text-[7px] text-slate-400 font-bold">{h % 3 === 0 ? h : ""}</div>
-                    ))}
-                  </div>
-                  {DIAS.map((dia, diaIdx) => (
-                    <div key={dia} className="flex items-center gap-[3px] mb-[3px]">
-                      <div className="w-7 text-[8px] font-black text-slate-500 uppercase shrink-0">{dia}</div>
-                      {Array.from({ length: 24 }, (_, hora) => {
-                        const valor = datos.heatmap[`${diaIdx}-${hora}`] ?? 0;
-                        const intensidad = valor / maxHeatmap;
-                        return (
-                          <div
-                            key={hora}
-                            title={`${dia} ${hora}:00 — ${valor} conexiones`}
-                            className="w-4 h-4 rounded-sm"
-                            style={{
-                              backgroundColor: valor === 0 ? "#F1F5F9" : `rgba(11, 58, 110, ${0.15 + intensidad * 0.85})`,
-                            }}
+              <h2 className="text-xs font-black text-[#0B3A6E] uppercase tracking-wider mb-1">Conexiones por día y hora</h2>
+              <p className="text-[9px] text-slate-400 font-medium mb-3">Toca un punto para filtrar los indicadores y el gráfico de la derecha.</p>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={datosLinea} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="hora" tick={{ fontSize: 9, fontWeight: 700 }} interval={2} />
+                    <YAxis tick={{ fontSize: 9, fontWeight: 700 }} allowDecimals={false} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: 10, fontWeight: 700 }} />
+                    {DIAS.map((dia) => (
+                      <Line
+                        key={dia}
+                        type="monotone"
+                        dataKey={dia}
+                        stroke={COLORES_DIAS[dia]}
+                        strokeWidth={1.75}
+                        dot={(props) => (
+                          <PuntoClicable
+                            key={`${dia}-${props.payload?.hora}`}
+                            {...props}
+                            onSeleccionar={manejarSeleccionPunto}
+                            filtroActivo={filtroDiaHora}
                           />
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
+                        )}
+                        activeDot={{ r: 5 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
-              <p className="text-[9px] text-slate-400 font-medium mt-3">
+              <p className="text-[9px] text-slate-400 font-medium mt-2">
                 {datos.sesionesAnalizadas} sesiones analizadas en el periodo seleccionado.
               </p>
             </section>

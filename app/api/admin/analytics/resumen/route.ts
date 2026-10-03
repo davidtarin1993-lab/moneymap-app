@@ -31,12 +31,32 @@ function agruparEnSesiones(timestamps: string[]): number[] {
   return duracionesMinutos;
 }
 
+function filtrarPorDiaHora<T extends { created_at: string }>(
+  rows: T[],
+  dia: number | null,
+  hora: number | null
+): T[] {
+  if (dia === null && hora === null) return rows;
+  return rows.filter((r) => {
+    const fecha = new Date(r.created_at);
+    if (dia !== null && fecha.getDay() !== dia) return false;
+    if (hora !== null && fecha.getHours() !== hora) return false;
+    return true;
+  });
+}
+
 export async function GET(request: Request) {
   const { user, error } = await getVerifiedAdmin(request as any);
   if (error || !user) return NextResponse.json({ error }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const mesParam = searchParams.get("mes"); // formato "YYYY-MM", opcional
+  const clienteIdParam = searchParams.get("clienteId"); // opcional, filtra a un cliente concreto
+  const diaParam = searchParams.get("dia"); // opcional, "0".."6" (clic en el gráfico)
+  const horaParam = searchParams.get("hora"); // opcional, "0".."23" (clic en el gráfico)
+
+  const diaFiltro = diaParam !== null && diaParam !== "" ? Number(diaParam) : null;
+  const horaFiltro = horaParam !== null && horaParam !== "" ? Number(horaParam) : null;
 
   let desde: Date;
   let hasta: Date;
@@ -60,29 +80,39 @@ export async function GET(request: Request) {
     .select("id", { count: "exact", head: true })
     .eq("role", "user");
 
-  const { data: conexiones7d } = await supabaseAdmin
+  let queryConexiones7d = supabaseAdmin
     .from("eventos_conexion")
     .select("cliente_id")
     .gte("created_at", hace7dias.toISOString());
+  if (clienteIdParam) queryConexiones7d = queryConexiones7d.eq("cliente_id", clienteIdParam);
+  const { data: conexiones7d } = await queryConexiones7d;
 
-  const { data: conexiones30d } = await supabaseAdmin
+  let queryConexiones30d = supabaseAdmin
     .from("eventos_conexion")
     .select("cliente_id")
     .gte("created_at", hace30dias.toISOString());
+  if (clienteIdParam) queryConexiones30d = queryConexiones30d.eq("cliente_id", clienteIdParam);
+  const { data: conexiones30d } = await queryConexiones30d;
 
-  const { data: conexionesPeriodo } = await supabaseAdmin
+  let queryConexionesPeriodo = supabaseAdmin
     .from("eventos_conexion")
     .select("cliente_id, created_at")
     .gte("created_at", desde.toISOString())
     .lt("created_at", hasta.toISOString());
+  if (clienteIdParam) queryConexionesPeriodo = queryConexionesPeriodo.eq("cliente_id", clienteIdParam);
+  const { data: conexionesPeriodo } = await queryConexionesPeriodo;
 
-  const { data: paginasPeriodo } = await supabaseAdmin
+  let queryPaginasPeriodo = supabaseAdmin
     .from("eventos_pagina")
     .select("cliente_id, seccion, created_at")
     .gte("created_at", desde.toISOString())
     .lt("created_at", hasta.toISOString());
+  if (clienteIdParam) queryPaginasPeriodo = queryPaginasPeriodo.eq("cliente_id", clienteIdParam);
+  const { data: paginasPeriodo } = await queryPaginasPeriodo;
 
-  // Heatmap: día de la semana (0=domingo) x hora
+  // Heatmap/línea: día de la semana (0=domingo) x hora — SIEMPRE sobre el total del
+  // periodo + cliente seleccionado (sin aplicar el filtro de día/hora), para que el
+  // gráfico siga mostrando toda la distribución y se pueda seguir seleccionando otro punto.
   const heatmap: Record<string, number> = {};
   for (const c of conexionesPeriodo ?? []) {
     const fecha = new Date(c.created_at);
@@ -90,27 +120,32 @@ export async function GET(request: Request) {
     heatmap[clave] = (heatmap[clave] ?? 0) + 1;
   }
 
+  // A partir de aquí, aplicamos el filtro de día/hora (si lo hay, viene de un clic
+  // en el gráfico) para recalcular indicadores y visitas por sección.
+  const conexionesFiltradas = filtrarPorDiaHora(conexionesPeriodo ?? [], diaFiltro, horaFiltro);
+  const paginasFiltradas = filtrarPorDiaHora(paginasPeriodo ?? [], diaFiltro, horaFiltro);
+
   // Visitas por sección
   const visitasPorSeccion: Record<string, number> = {
     movimientos: 0, fiscalidad: 0, ruta: 0, pildoras: 0, noticias: 0, cartera: 0,
   };
-  for (const p of paginasPeriodo ?? []) {
+  for (const p of paginasFiltradas) {
     if (visitasPorSeccion[p.seccion] !== undefined) visitasPorSeccion[p.seccion]++;
   }
 
-  // Frecuencia media: conexiones del periodo / clientes distintos que se conectaron
-  const clientesConConexion = new Set((conexionesPeriodo ?? []).map((c) => c.cliente_id));
+  // Frecuencia media: conexiones del periodo (filtrado) / clientes distintos que se conectaron
+  const clientesConConexion = new Set(conexionesFiltradas.map((c) => c.cliente_id));
   const frecuenciaMedia = clientesConConexion.size > 0
-    ? (conexionesPeriodo?.length ?? 0) / clientesConConexion.size
+    ? conexionesFiltradas.length / clientesConConexion.size
     : 0;
 
   // Duración media de sesión: agrupamos conexiones + páginas por cliente
   const eventosPorCliente = new Map<string, string[]>();
-  for (const c of conexionesPeriodo ?? []) {
+  for (const c of conexionesFiltradas) {
     if (!eventosPorCliente.has(c.cliente_id)) eventosPorCliente.set(c.cliente_id, []);
     eventosPorCliente.get(c.cliente_id)!.push(c.created_at);
   }
-  for (const p of paginasPeriodo ?? []) {
+  for (const p of paginasFiltradas) {
     if (!eventosPorCliente.has(p.cliente_id)) eventosPorCliente.set(p.cliente_id, []);
     eventosPorCliente.get(p.cliente_id)!.push(p.created_at);
   }
@@ -124,10 +159,21 @@ export async function GET(request: Request) {
     ? todasLasDuraciones.reduce((a, b) => a + b, 0) / todasLasDuraciones.length
     : null;
 
+  // Cuando se filtra a un único cliente, "conexiones última semana/mes" como recuento
+  // de clientes distintos deja de tener sentido (siempre sería 0 o 1) — mostramos el
+  // número de conexiones de ese cliente en su lugar.
+  const conexionesUltimaSemana = clienteIdParam
+    ? (conexiones7d ?? []).length
+    : new Set((conexiones7d ?? []).map((c) => c.cliente_id)).size;
+
+  const conexionesUltimoMes = clienteIdParam
+    ? (conexiones30d ?? []).length
+    : new Set((conexiones30d ?? []).map((c) => c.cliente_id)).size;
+
   return NextResponse.json({
     totalClientes: totalClientes ?? 0,
-    conexionesUltimaSemana: new Set((conexiones7d ?? []).map((c) => c.cliente_id)).size,
-    conexionesUltimoMes: new Set((conexiones30d ?? []).map((c) => c.cliente_id)).size,
+    conexionesUltimaSemana,
+    conexionesUltimoMes,
     heatmap,
     visitasPorSeccion,
     frecuenciaMedia: Math.round(frecuenciaMedia * 10) / 10,
