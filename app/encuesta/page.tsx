@@ -12,6 +12,14 @@ import {
   Compass,
   Send,
   CheckCircle2,
+  TrendingUp,
+  Scale,
+  MapPinned,
+  GraduationCap,
+  Sparkles,
+  LineChart,
+  LifeBuoy,
+  Star,
 } from "lucide-react";
 
 // Guardar en: app/encuesta/page.tsx
@@ -20,13 +28,35 @@ interface Respuestas {
   perfil: string;
   sentimiento: number | null;
   confianza: number | null;
+  interesPrincipal: string;
+
   utilidadMovimientos: number | null;
+  precisionClasificacion: string;
+  faltaGastos: string;
+
   utilidadFiscalidad: number | null;
+  ayudaFiscal: string;
+  dudasFiscales: string;
+
   utilidadRuta: number | null;
+  rutaAjustada: string;
+  cambiariaRuta: string;
+
   utilidadAcademia: number | null;
+  formatoPreferido: string;
+  temasAprender: string;
+
   utilidadAplicaciones: number | null;
+  appsUsadas: string[];
+  fiabilidadApps: string;
+
   utilidadCartera: number | null;
+  invertiriasCartera: string;
+  faltaCartera: string;
+
   utilidadSoporte: number | null;
+  tiempoRespuesta: string;
+
   facilidadUso: number | null;
   queConfundio: string;
   opinionPrecio: string;
@@ -41,13 +71,35 @@ const ESTADO_INICIAL: Respuestas = {
   perfil: "",
   sentimiento: null,
   confianza: null,
+  interesPrincipal: "",
+
   utilidadMovimientos: null,
+  precisionClasificacion: "",
+  faltaGastos: "",
+
   utilidadFiscalidad: null,
+  ayudaFiscal: "",
+  dudasFiscales: "",
+
   utilidadRuta: null,
+  rutaAjustada: "",
+  cambiariaRuta: "",
+
   utilidadAcademia: null,
+  formatoPreferido: "",
+  temasAprender: "",
+
   utilidadAplicaciones: null,
+  appsUsadas: [],
+  fiabilidadApps: "",
+
   utilidadCartera: null,
+  invertiriasCartera: "",
+  faltaCartera: "",
+
   utilidadSoporte: null,
+  tiempoRespuesta: "",
+
   facilidadUso: null,
   queConfundio: "",
   opinionPrecio: "",
@@ -58,14 +110,13 @@ const ESTADO_INICIAL: Respuestas = {
   emailContacto: "",
 };
 
-const MODULOS: { clave: keyof Respuestas; label: string }[] = [
-  { clave: "utilidadMovimientos", label: "Movimientos Bancarios" },
-  { clave: "utilidadFiscalidad", label: "Fiscalidad" },
-  { clave: "utilidadRuta", label: "Ruta (asesoramiento)" },
-  { clave: "utilidadAcademia", label: "Academia" },
-  { clave: "utilidadAplicaciones", label: "Apps y calculadoras" },
-  { clave: "utilidadCartera", label: "Cartera MoneyMap" },
-  { clave: "utilidadSoporte", label: "Soporte" },
+const AREAS_INTERES = [
+  { valor: "movimientos", label: "Gastos / Movimientos" },
+  { valor: "fiscalidad", label: "Fiscalidad" },
+  { valor: "ruta", label: "Ruta (asesoramiento)" },
+  { valor: "academia", label: "Academia" },
+  { valor: "aplicaciones", label: "Apps y calculadoras" },
+  { valor: "cartera", label: "Cartera de inversión" },
 ];
 
 function EscalaNumerica({
@@ -141,6 +192,38 @@ function SelectorOpciones({
   );
 }
 
+function SelectorMultiple({
+  opciones,
+  valores,
+  onChange,
+}: {
+  opciones: { valor: string; label: string }[];
+  valores: string[];
+  onChange: (v: string[]) => void;
+}) {
+  function alternar(v: string) {
+    onChange(valores.includes(v) ? valores.filter((x) => x !== v) : [...valores, v]);
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {opciones.map((op) => (
+        <button
+          key={op.valor}
+          type="button"
+          onClick={() => alternar(op.valor)}
+          className={`px-3 py-2 rounded-xl text-[11px] font-black transition-all ${
+            valores.includes(op.valor)
+              ? "bg-[#0B3A6E] text-white"
+              : "bg-slate-50 border border-slate-200 text-slate-500 hover:border-[#0B3A6E]/30"
+          }`}
+        >
+          {op.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function BloqueEncuesta({
   icono,
   titulo,
@@ -163,6 +246,32 @@ function BloqueEncuesta({
       </div>
       {children}
     </section>
+  );
+}
+
+function Pregunta({ children }: { children: React.ReactNode }) {
+  return <p className="text-[11px] text-slate-500 font-bold mb-1.5">{children}</p>;
+}
+
+function CampoTexto({
+  valor,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  valor: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  rows?: number;
+}) {
+  return (
+    <textarea
+      rows={rows}
+      value={valor}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-[12px] focus:outline-none focus:border-[#0B3A6E] font-medium resize-none"
+    />
   );
 }
 
@@ -231,14 +340,14 @@ export default function EncuestaPage() {
             <h1 className="text-lg font-black text-[#0B3A6E]">Encuesta MoneyMap</h1>
           </div>
           <p className="text-[11.5px] text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-            2-3 minutos. Tus respuestas son anónimas salvo que quieras dejarnos tu email, y nos sirven para
+            5 minutos. Tus respuestas son anónimas salvo que quieras dejarnos tu email, y nos sirven para
             decidir cómo sigue MoneyMap a partir de ahora.
           </p>
         </header>
 
         {/* PERFIL */}
         <BloqueEncuesta icono={<Compass size={15} className="text-[#0B3A6E]" />} titulo="Para empezar">
-          <p className="text-[11px] text-slate-500 font-bold">¿Cuál es tu relación con MoneyMap?</p>
+          <Pregunta>¿Cuál es tu relación con MoneyMap?</Pregunta>
           <SelectorOpciones
             valor={respuestas.perfil}
             onChange={(v) => actualizar("perfil", v)}
@@ -257,7 +366,7 @@ export default function EncuestaPage() {
           subtitulo="Lo primero, sin pensarlo mucho"
         >
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">¿Cómo te hace sentir usar MoneyMap?</p>
+            <Pregunta>¿Cómo te hace sentir usar MoneyMap?</Pregunta>
             <EscalaNumerica
               valor={respuestas.sentimiento}
               onChange={(v) => actualizar("sentimiento", v)}
@@ -266,7 +375,7 @@ export default function EncuestaPage() {
             />
           </div>
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">¿Confías en la herramienta para gestionar tus finanzas?</p>
+            <Pregunta>¿Confías en la herramienta para gestionar tus finanzas?</Pregunta>
             <EscalaNumerica
               valor={respuestas.confianza}
               onChange={(v) => actualizar("confianza", v)}
@@ -276,27 +385,245 @@ export default function EncuestaPage() {
           </div>
         </BloqueEncuesta>
 
-        {/* UTILIDAD POR MÓDULO */}
+        {/* QUÉ TE PARECE MÁS INTERESANTE */}
         <BloqueEncuesta
-          icono={<Gauge size={15} className="text-[#0B3A6E]" />}
-          titulo="Contenido y funciones"
-          subtitulo="Valora cada parte (1 = nada útil, 5 = muy útil)"
+          icono={<Star size={15} className="text-[#0B3A6E]" />}
+          titulo="¿Qué parte te parece más interesante?"
+          subtitulo="Elige la que más valor te aporta — profundizamos en cada una justo debajo"
         >
-          {MODULOS.map((modulo) => (
-            <div key={modulo.clave}>
-              <p className="text-[11px] text-slate-500 font-bold mb-1.5">{modulo.label}</p>
-              <EscalaNumerica
-                valor={respuestas[modulo.clave] as number | null}
-                onChange={(v) => actualizar(modulo.clave, v as any)}
-              />
-            </div>
-          ))}
+          <SelectorOpciones
+            valor={respuestas.interesPrincipal}
+            onChange={(v) => actualizar("interesPrincipal", v)}
+            opciones={AREAS_INTERES}
+          />
+        </BloqueEncuesta>
+
+        {/* MOVIMIENTOS / GASTOS */}
+        <BloqueEncuesta
+          icono={<TrendingUp size={15} className="text-[#0B3A6E]" />}
+          titulo="Gastos y movimientos"
+          subtitulo="El mapa visual de ingresos y gastos"
+        >
+          <div>
+            <Pregunta>¿Qué tan útil te resulta? (1 = nada, 5 = mucho)</Pregunta>
+            <EscalaNumerica valor={respuestas.utilidadMovimientos} onChange={(v) => actualizar("utilidadMovimientos", v)} />
+          </div>
+          <div>
+            <Pregunta>¿La clasificación automática de tus gastos te pareció precisa?</Pregunta>
+            <SelectorOpciones
+              valor={respuestas.precisionClasificacion}
+              onChange={(v) => actualizar("precisionClasificacion", v)}
+              opciones={[
+                { valor: "si_bastante", label: "Sí, bastante" },
+                { valor: "mas_o_menos", label: "Más o menos" },
+                { valor: "falla_mucho", label: "Falla mucho" },
+                { valor: "no_probado", label: "No lo he probado" },
+              ]}
+            />
+          </div>
+          <div>
+            <Pregunta>¿Qué echas en falta en el mapa de gastos? (opcional)</Pregunta>
+            <CampoTexto
+              valor={respuestas.faltaGastos}
+              onChange={(v) => actualizar("faltaGastos", v)}
+              placeholder="Ej: alertas, comparar meses, exportar a Excel..."
+            />
+          </div>
+        </BloqueEncuesta>
+
+        {/* FISCALIDAD */}
+        <BloqueEncuesta
+          icono={<Scale size={15} className="text-[#0B3A6E]" />}
+          titulo="Fiscalidad"
+          subtitulo="Ayuda con tu declaración y documentos fiscales"
+        >
+          <div>
+            <Pregunta>¿Qué tan útil te resulta? (1 = nada, 5 = mucho)</Pregunta>
+            <EscalaNumerica valor={respuestas.utilidadFiscalidad} onChange={(v) => actualizar("utilidadFiscalidad", v)} />
+          </div>
+          <div>
+            <Pregunta>¿Te ayudó a entender mejor tu declaración de la renta?</Pregunta>
+            <SelectorOpciones
+              valor={respuestas.ayudaFiscal}
+              onChange={(v) => actualizar("ayudaFiscal", v)}
+              opciones={[
+                { valor: "si", label: "Sí" },
+                { valor: "no", label: "No" },
+                { valor: "no_probado", label: "No lo he probado" },
+              ]}
+            />
+          </div>
+          <div>
+            <Pregunta>¿Qué dudas fiscales te gustaría que cubriera la app? (opcional)</Pregunta>
+            <CampoTexto
+              valor={respuestas.dudasFiscales}
+              onChange={(v) => actualizar("dudasFiscales", v)}
+              placeholder="Ej: deducciones autonómicas, autónomos, alquiler..."
+            />
+          </div>
+        </BloqueEncuesta>
+
+        {/* RUTA */}
+        <BloqueEncuesta
+          icono={<MapPinned size={15} className="text-[#0B3A6E]" />}
+          titulo="Ruta (asesoramiento personalizado)"
+        >
+          <div>
+            <Pregunta>¿Qué tan útil te resulta? (1 = nada, 5 = mucho)</Pregunta>
+            <EscalaNumerica valor={respuestas.utilidadRuta} onChange={(v) => actualizar("utilidadRuta", v)} />
+          </div>
+          <div>
+            <Pregunta>¿La ruta propuesta se ajustaba a tu situación real?</Pregunta>
+            <SelectorOpciones
+              valor={respuestas.rutaAjustada}
+              onChange={(v) => actualizar("rutaAjustada", v)}
+              opciones={[
+                { valor: "si", label: "Sí" },
+                { valor: "mas_o_menos", label: "Más o menos" },
+                { valor: "no", label: "No" },
+                { valor: "no_solicitada", label: "No la he solicitado" },
+              ]}
+            />
+          </div>
+          <div>
+            <Pregunta>¿Qué cambiarías del proceso de solicitar tu ruta? (opcional)</Pregunta>
+            <CampoTexto
+              valor={respuestas.cambiariaRuta}
+              onChange={(v) => actualizar("cambiariaRuta", v)}
+              placeholder="Ej: tiempo de espera, más preguntas iniciales, seguimiento..."
+            />
+          </div>
+        </BloqueEncuesta>
+
+        {/* ACADEMIA */}
+        <BloqueEncuesta
+          icono={<GraduationCap size={15} className="text-[#0B3A6E]" />}
+          titulo="Academia"
+          subtitulo="Píldoras, noticias y contenido formativo"
+        >
+          <div>
+            <Pregunta>¿Qué tan útil te resulta? (1 = nada, 5 = mucho)</Pregunta>
+            <EscalaNumerica valor={respuestas.utilidadAcademia} onChange={(v) => actualizar("utilidadAcademia", v)} />
+          </div>
+          <div>
+            <Pregunta>¿Qué formato de contenido prefieres?</Pregunta>
+            <SelectorOpciones
+              valor={respuestas.formatoPreferido}
+              onChange={(v) => actualizar("formatoPreferido", v)}
+              opciones={[
+                { valor: "pildoras", label: "Píldoras cortas" },
+                { valor: "noticias", label: "Noticias" },
+                { valor: "cartera_modelo", label: "Cartera modelo" },
+                { valor: "ninguno", label: "Ninguno me engancha" },
+              ]}
+            />
+          </div>
+          <div>
+            <Pregunta>¿Sobre qué te gustaría aprender más? (opcional)</Pregunta>
+            <CampoTexto
+              valor={respuestas.temasAprender}
+              onChange={(v) => actualizar("temasAprender", v)}
+              placeholder="Ej: inversión para principiantes, hipotecas, ahorro fiscal..."
+            />
+          </div>
+        </BloqueEncuesta>
+
+        {/* APLICACIONES */}
+        <BloqueEncuesta
+          icono={<Sparkles size={15} className="text-[#0B3A6E]" />}
+          titulo="Apps y calculadoras"
+          subtitulo="Hipoteca, perfil de riesgo, quiz, proyector de patrimonio"
+        >
+          <div>
+            <Pregunta>¿Qué tan útil te resulta? (1 = nada, 5 = mucho)</Pregunta>
+            <EscalaNumerica valor={respuestas.utilidadAplicaciones} onChange={(v) => actualizar("utilidadAplicaciones", v)} />
+          </div>
+          <div>
+            <Pregunta>¿Cuáles usaste? (puedes marcar varias)</Pregunta>
+            <SelectorMultiple
+              valores={respuestas.appsUsadas}
+              onChange={(v) => actualizar("appsUsadas", v)}
+              opciones={[
+                { valor: "hipoteca", label: "Simulador de hipoteca" },
+                { valor: "riesgo", label: "Perfil de riesgo" },
+                { valor: "quiz", label: "Quiz financiero" },
+                { valor: "patrimonio", label: "Proyector de patrimonio" },
+                { valor: "ninguna", label: "Ninguna" },
+              ]}
+            />
+          </div>
+          <div>
+            <Pregunta>¿Te resultaron fiables los resultados?</Pregunta>
+            <SelectorOpciones
+              valor={respuestas.fiabilidadApps}
+              onChange={(v) => actualizar("fiabilidadApps", v)}
+              opciones={[
+                { valor: "si", label: "Sí" },
+                { valor: "mas_o_menos", label: "Más o menos" },
+                { valor: "no", label: "No" },
+                { valor: "no_probado", label: "No las he probado" },
+              ]}
+            />
+          </div>
+        </BloqueEncuesta>
+
+        {/* CARTERA DE INVERSIÓN */}
+        <BloqueEncuesta
+          icono={<LineChart size={15} className="text-[#0B3A6E]" />}
+          titulo="Cartera de inversión"
+          subtitulo="Cartera modelo MoneyMap"
+        >
+          <div>
+            <Pregunta>¿Qué tan útil te resulta? (1 = nada, 5 = mucho)</Pregunta>
+            <EscalaNumerica valor={respuestas.utilidadCartera} onChange={(v) => actualizar("utilidadCartera", v)} />
+          </div>
+          <div>
+            <Pregunta>¿Invertirías replicando la cartera modelo de MoneyMap?</Pregunta>
+            <SelectorOpciones
+              valor={respuestas.invertiriasCartera}
+              onChange={(v) => actualizar("invertiriasCartera", v)}
+              opciones={[
+                { valor: "si", label: "Sí" },
+                { valor: "tal_vez", label: "Tal vez" },
+                { valor: "no", label: "No" },
+              ]}
+            />
+          </div>
+          <div>
+            <Pregunta>¿Qué información echas en falta sobre la cartera? (opcional)</Pregunta>
+            <CampoTexto
+              valor={respuestas.faltaCartera}
+              onChange={(v) => actualizar("faltaCartera", v)}
+              placeholder="Ej: rentabilidad histórica, composición, nivel de riesgo..."
+            />
+          </div>
+        </BloqueEncuesta>
+
+        {/* SOPORTE */}
+        <BloqueEncuesta icono={<LifeBuoy size={15} className="text-[#0B3A6E]" />} titulo="Soporte">
+          <div>
+            <Pregunta>¿Qué tan útil te resulta? (1 = nada, 5 = mucho)</Pregunta>
+            <EscalaNumerica valor={respuestas.utilidadSoporte} onChange={(v) => actualizar("utilidadSoporte", v)} />
+          </div>
+          <div>
+            <Pregunta>¿Qué tal fue el tiempo de respuesta?</Pregunta>
+            <SelectorOpciones
+              valor={respuestas.tiempoRespuesta}
+              onChange={(v) => actualizar("tiempoRespuesta", v)}
+              opciones={[
+                { valor: "rapido", label: "Rápido" },
+                { valor: "normal", label: "Normal" },
+                { valor: "lento", label: "Lento" },
+                { valor: "no_usado", label: "No lo he usado" },
+              ]}
+            />
+          </div>
         </BloqueEncuesta>
 
         {/* FACILIDAD DE USO */}
-        <BloqueEncuesta icono={<ShieldCheck size={15} className="text-[#0B3A6E]" />} titulo="Facilidad de uso">
+        <BloqueEncuesta icono={<ShieldCheck size={15} className="text-[#0B3A6E]" />} titulo="Facilidad de uso general">
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">¿Qué tan fácil te resulta usar la app?</p>
+            <Pregunta>¿Qué tan fácil te resulta usar la app?</Pregunta>
             <EscalaNumerica
               valor={respuestas.facilidadUso}
               onChange={(v) => actualizar("facilidadUso", v)}
@@ -305,13 +632,11 @@ export default function EncuestaPage() {
             />
           </div>
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">¿Hay algo que te resultó confuso o poco claro? (opcional)</p>
-            <textarea
-              rows={3}
-              value={respuestas.queConfundio}
-              onChange={(e) => actualizar("queConfundio", e.target.value)}
+            <Pregunta>¿Hay algo que te resultó confuso o poco claro? (opcional)</Pregunta>
+            <CampoTexto
+              valor={respuestas.queConfundio}
+              onChange={(v) => actualizar("queConfundio", v)}
               placeholder="Cuéntanoslo con tus palabras..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-[12px] focus:outline-none focus:border-[#0B3A6E] font-medium resize-none"
             />
           </div>
         </BloqueEncuesta>
@@ -319,7 +644,7 @@ export default function EncuestaPage() {
         {/* PRECIO */}
         <BloqueEncuesta icono={<Euro size={15} className="text-[#0B3A6E]" />} titulo="Precio">
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">La suscripción cuesta 9,99€/mes (99,99€/año). ¿Qué te parece?</p>
+            <Pregunta>La suscripción cuesta 9,99€/mes (99,99€/año). ¿Qué te parece?</Pregunta>
             <SelectorOpciones
               valor={respuestas.opinionPrecio}
               onChange={(v) => actualizar("opinionPrecio", v)}
@@ -331,7 +656,7 @@ export default function EncuestaPage() {
             />
           </div>
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">¿Pagarías por MoneyMap?</p>
+            <Pregunta>¿Pagarías por MoneyMap?</Pregunta>
             <SelectorOpciones
               valor={respuestas.pagarias}
               onChange={(v) => actualizar("pagarias", v)}
@@ -351,9 +676,7 @@ export default function EncuestaPage() {
           subtitulo="Esta parte nos ayuda más que ninguna otra"
         >
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">
-              Del 0 al 10, ¿qué probabilidad hay de que recomiendes MoneyMap a alguien?
-            </p>
+            <Pregunta>Del 0 al 10, ¿qué probabilidad hay de que recomiendes MoneyMap a alguien?</Pregunta>
             <EscalaNumerica
               valor={respuestas.nps}
               onChange={(v) => actualizar("nps", v)}
@@ -364,9 +687,7 @@ export default function EncuestaPage() {
             />
           </div>
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">
-              Con sinceridad: ¿crees que deberíamos seguir desarrollando MoneyMap?
-            </p>
+            <Pregunta>Con sinceridad: ¿crees que deberíamos seguir desarrollando MoneyMap?</Pregunta>
             <SelectorOpciones
               valor={respuestas.futuro}
               onChange={(v) => actualizar("futuro", v)}
@@ -378,15 +699,12 @@ export default function EncuestaPage() {
             />
           </div>
           <div>
-            <p className="text-[11px] text-slate-500 font-bold mb-1.5">
-              ¿Qué añadirías, quitarías o cambiarías? (opcional, pero es lo que más nos ayuda)
-            </p>
-            <textarea
-              rows={4}
-              value={respuestas.mejoras}
-              onChange={(e) => actualizar("mejoras", e.target.value)}
+            <Pregunta>¿Qué añadirías, quitarías o cambiarías? (opcional, pero es lo que más nos ayuda)</Pregunta>
+            <CampoTexto
+              valor={respuestas.mejoras}
+              onChange={(v) => actualizar("mejoras", v)}
               placeholder="Sin filtros, dinos qué mejorarías..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-[12px] focus:outline-none focus:border-[#0B3A6E] font-medium resize-none"
+              rows={4}
             />
           </div>
         </BloqueEncuesta>
